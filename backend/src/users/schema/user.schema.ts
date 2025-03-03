@@ -5,6 +5,14 @@ export enum UserRole {
   USER = 'user',
   ADMIN = 'admin',
 }
+ 
+class Device {
+  @Prop({ required: true })
+ iscourrant: boolean;
+
+  @Prop({ required: true })
+  deviceName: string;
+}
 
 @Schema({ timestamps: true })
 export class User extends Document {
@@ -42,8 +50,8 @@ export class User extends Document {
   @Prop()
   verificationTokenExpires?: Date;
 
-  @Prop({ type: [String], default: [] })
-  devices: string[];
+  @Prop({required: true, default: [] })
+  devices: Device[];
 
   @Prop({ enum: UserRole, default: UserRole.USER })  
   role: UserRole;  

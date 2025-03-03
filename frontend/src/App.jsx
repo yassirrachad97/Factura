@@ -3,6 +3,8 @@ import LoginPage from './pages/LoginPage';
 
 import './App.css';
 import RegisterPage from './pages/RegisterPage';
+import DashboardPage from './pages/DashboardPage';
+import VerifyOtpPage from './pages/VerifyOtpPage';
 
 function App() {
   return (
@@ -11,9 +13,11 @@ function App() {
 
       <Routes>
        
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<LoginPage />} />
         
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/dashboard/:categoryId?" element={<DashboardPage />} />
+        <Route path='/verifyOtp' element={<VerifyOtpPage/>} />
       </Routes>
     </Router>
   );

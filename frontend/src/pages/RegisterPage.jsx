@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AuthLayout from '../components/Auth/AuthLayout';
 import AuthForm from '../components/Auth/AuthForm';
 import { register } from '../api/userService';
@@ -15,20 +15,49 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [deviceId, setDeviceId] = useState('');
+
+  useEffect(() => {
+    const generateDeviceId = () => {
+      let existingDeviceId = localStorage.getItem('deviceId');
+      
+    
+      if (!existingDeviceId) {
+        existingDeviceId = 'browser_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('deviceId', existingDeviceId); 
+      }
+      
+      setDeviceId(existingDeviceId);
+    };
+    
+    generateDeviceId();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
     setIsLoading(true);
-   
+  
+    const payload = { 
+      firstname, 
+      lastname, 
+      username, 
+      telephone, 
+      email, 
+      password,
+      deviceId 
+    };
+    console.log('Payload being sent:', payload);
+     
     try {
-      const response = await register({ firstname, lastname, username, telephone, email, password });
-      console.log('Registration successful:', response);
+      const response = await register(payload);
+      console.log('Données envoyées :', payload);
+      console.log('Inscription réussie:', response);
       setSuccess('Inscription réussie! Redirection vers la page de connexion...');
-      // Redirection après 2 secondes
+  
       setTimeout(() => {
-        window.location.href = '/login';
+        window.location.href = '/';
       }, 2000);
     } catch (error) {
       console.error('Registration failed:', error);
@@ -124,7 +153,7 @@ export default function RegisterPage() {
       <div className="text-center mt-4">
         <p className="text-gray-600">
           Vous avez déjà un compte?{' '}
-          <a href="/login" className="text-[#2e3f6e] hover:underline">
+          <a href="/" className="text-[#2e3f6e] hover:underline">
             Se connecter
           </a>
         </p>

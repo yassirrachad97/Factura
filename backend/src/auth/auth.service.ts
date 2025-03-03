@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcryptjs';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
@@ -11,32 +12,40 @@ export class AuthService {
   ) {}
 
   
-  async login(email: string, password: string, deviceId: string) {
-    const user = await this.usersService.findByEmailOrThrow(email);
-  
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+  async login(body: LoginDto, deviceId: string) {
+    const user = await this.usersService.findByEmailOrThrow(body.email);
+    const isPasswordValid = await bcrypt.compare(body.password, user.password);
     if (!isPasswordValid) throw new UnauthorizedException('Email ou mot de passe incorrect');
   
-    if (!deviceId || typeof deviceId !== 'string') {
-      throw new BadRequestException('Device ID invalide');
+   
+  
+    const isNewDevice = user.devices?.find((device) => {
+      if (device.deviceName === deviceId) {
+        return true;
+      } else {
+        return false;
+      }
+    });
+    console.log(isNewDevice)
+  
+    if (!isNewDevice) {
+      const otp = await this.usersService.generateOTP(body.email);
+      await this.usersService.sendOTP(body.email, otp);
+  
+      return {
+        message: 'Nouveau périphérique détecté. Vérifiez votre email pour autoriser cet appareil.',
+        status: 201,
+        email : user.email
+    
     }
-  
-    const isNewDevice = !user.devices?.includes(deviceId);
-  
-    if (isNewDevice) {
-      const otp = await this.usersService.generateOTP(email);
-      await this.usersService.sendVerificationEmail(email, otp);
-  
-      throw new UnauthorizedException('Nouveau périphérique détecté. Vérifiez votre email pour autoriser cet appareil.');
     }
-  
     const payload = { sub: user._id, email: user.email };
     const token = this.jwtService.sign(payload, {
       secret: process.env.JWT_SECRET,
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
   
-    return { token };
+    return { token, status: 200 };
   }
   
 

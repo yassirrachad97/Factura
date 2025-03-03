@@ -1,41 +1,58 @@
-import { useState } from 'react';
-import AuthLayout from '../components/Auth/AuthLayout';
-import AuthForm from '../components/Auth/AuthForm';
-import { login } from '../api/userService';
-import riadLogo from '../assets/riad-logo.png';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Importer useNavigate
+import AuthLayout from "../components/Auth/AuthLayout";
+import AuthForm from "../components/Auth/AuthForm";
+import { login } from "../api/userService";
+import riadLogo from "../assets/riad-logo.png";
 
 export default function LoginPage() {
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate(); 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+  
     try {
-      const response = await login({ identifier, password });
-      console.log('Login successful:', response);
-      
-    } catch (error) {
-      console.error('Login failed:', error);
+      const response = await login({ email, password });
+
+      console.log(response)
+      localStorage.setItem("user-email", response?.email)
+     
+      // localStorage.setItem("token", response.token);
+     
+      // if (response.role === "admin") {
+      //   navigate("/admin");
+      // } else {
+      //   navigate("/dashboard");
+      // }
+  
+    } catch (err) {
+      console.log("Erreur lors de la connexion:", err);
+      console.error("Échec de connexion:", err);
+      setError("Identifiant ou mot de passe incorrect.");
     }
   };
-
+  
   const fields = [
     {
-      label: 'Identifiant',
-      type: 'text',
-      name: 'identifier',
-      value: identifier,
-      onChange: (e) => setIdentifier(e.target.value),
-      placeholder: 'Identifiant',
+      label: "email",
+      type: "email",
+      name: "email",
+      value: email,
+      onChange: (e) => setEmail(e.target.value),
+      placeholder: "email",
     },
     {
-      label: 'Mot de passe',
-      type: 'password',
-      name: 'password',
+      label: "Mot de passe",
+      type: "password",
+      name: "password",
       value: password,
       onChange: (e) => setPassword(e.target.value),
-      placeholder: 'Mot de passe',
+      placeholder: "Mot de passe",
       showPassword: showPassword,
       setShowPassword: setShowPassword,
     },
@@ -55,17 +72,21 @@ export default function LoginPage() {
 
       <div className="mb-8 text-center">
         <p className="text-gray-700">
-          Veuillez saisir votre identifiant et mot de passe pour se connecter
+          Veuillez saisir votre identifiant et mot de passe pour vous connecter.
         </p>
       </div>
 
-      <AuthForm 
-        fields={fields} 
-        onSubmit={handleSubmit} 
-        buttonText="Se connecter" 
-      />
+      {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+
+      <AuthForm fields={fields} onSubmit={handleSubmit} buttonText="Se connecter" />
 
       <div className="text-center mt-4">
+        <p className="text-gray-600">
+          Vous n'avez pas de compte?{" "}
+          <a href="/register" className="text-[#2e3f6e] hover:underline">
+            S'inscrire
+          </a>
+        </p>
         <a href="#" className="text-[#2e3f6e] hover:underline">
           Mot de passe oublié ?
         </a>

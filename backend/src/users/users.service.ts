@@ -12,30 +12,46 @@ export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
   
-  async register(dto: RegisterDto, deviceId: string): Promise<User> {
+  async register(dto: RegisterDto): Promise<User> {
     try {
+      console.log('➡️ Tentative d\'inscription avec les données:', dto);
+  
       const existingUser = await this.findByEmail(dto.email);
-      if (existingUser) throw new BadRequestException('Cet email est déjà utilisé');
+      if (existingUser) {
+        console.error('❌ Erreur : Email déjà utilisé:', dto.email);
+        throw new BadRequestException('Cet email est déjà utilisé');
+      }
   
       const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
       dto.password = await bcrypt.hash(dto.password, saltRounds);
+      console.log('🔒 Mot de passe haché');
   
-      const user = new this.userModel({ ...dto, devices: [deviceId], isVerified: false });
+      const user = new this.userModel({
+        ...dto,
+        isVerified: false,
+      });
+  
+      console.log('✅ Utilisateur créé :', user);
+  
       await user.save();
+      console.log('📂 Utilisateur sauvegardé');
   
       const token = await this.generateVerificationToken(dto.email);
-      const verificationLink = `http://yourdomain.com/verify-email?token=${token}&deviceId=${deviceId}`;
+      console.log('🔑 Token de vérification:', token);
   
-      await this.sendVerificationEmail(dto.email, verificationLink);
+      await this.sendVerificationEmail(dto.email, token);
+      console.log('📨 Email envoyé à:', dto.email);
   
       return user;
     } catch (error) {
-      console.error(`Erreur lors de l'inscription : ${error}`);
-      throw new BadRequestException('Erreur lors de l\'inscription');
+      console.error('❌ Erreur lors de l\'inscription:', error);
+      throw new BadRequestException('Erreur lors de l\'inscription: ' + error.message);
     }
   }
   
-  async verifyEmail(token: string, deviceId: string): Promise<boolean> {
+  
+  
+  async verifyEmail(token: string): Promise<boolean> {
     if (!token || typeof token !== 'string') {
       throw new BadRequestException('Token de vérification invalide');
     }
@@ -43,10 +59,6 @@ export class UsersService {
     const user = await this.userModel.findOne({ verificationToken: token });
     if (!user || user.verificationTokenExpires < new Date()) {
       return false;
-    }
-  
-    if (!user.devices.includes(deviceId)) {
-      user.devices.push(deviceId);
     }
   
     user.isVerified = true;
@@ -87,11 +99,14 @@ export class UsersService {
     }
   
     
-    if (!user.devices.includes(deviceId)) {
-      user.devices.push(deviceId);
+    if (!user.devices.find((device) => {
+      device.deviceName === deviceId
+    })) {
+      user.devices.push({ deviceName: deviceId, iscourrant: true });
+      await user.save();
     }
   
-    await this.userModel.updateOne({ email }, { otp: null, otpExpires: null, isVerified: true });
+    await this.userModel.updateOne({ email }, { otp: null, otpExpires: null });
   
     return true;
   }
@@ -103,8 +118,10 @@ export class UsersService {
     if (!user) throw new BadRequestException('Utilisateur non trouvé');
 
     if (!user.devices) user.devices = [];
-    if (!user.devices.includes(deviceId)) {
-      user.devices.push(deviceId);
+    if (!user.devices.map((Device)=>{
+      return Device.deviceName === deviceId
+    })) {
+      user.devices.push({ deviceName: deviceId, iscourrant: false });
     }
 
     return user.save();
@@ -112,7 +129,7 @@ export class UsersService {
 
  
   async sendVerificationEmail(email: string, token: string) {
-    const verificationLink = `http://yourdomain.com/verify-email?token=${token}`;
+    const verificationLink = `http://localhost:3000/api/users/verify-email?token=${token}`;
     
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -134,6 +151,25 @@ export class UsersService {
       `,
     };
   
+    await transporter.sendMail(mailOptions);
+  }
+
+  async sendOTP(email: string, otp: string) {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_FROM_ADDRESS,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM_ADDRESS,
+      to: email,
+      subject: 'Code OTP pour la connexion',
+      text: `Votre code OTP est : ${otp}`,
+    };
+
     await transporter.sendMail(mailOptions);
   }
   
