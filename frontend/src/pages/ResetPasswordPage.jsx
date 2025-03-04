@@ -2,63 +2,42 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthLayout from "../components/Auth/AuthLayout";
 import AuthForm from "../components/Auth/AuthForm";
-import { verifyOtp, resendOtp } from "../api/userService"; // Importez resendOtp
+import { resetPassword } from "../api/userService";
 import riadLogo from "../assets/riad-logo.png";
 
-export default function VerifyOtpPage() {
+export default function ResetPasswordPage() {
   const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleResetPassword = async (e) => {
     e.preventDefault();
     setError("");
     setSuccessMessage("");
 
-    const email = localStorage.getItem("user-email");
+    const email = localStorage.getItem("reset-email"); 
     if (!email) {
       setError("Aucun email trouvé. Veuillez réessayer.");
       return;
     }
 
     try {
-      const response = await verifyOtp(email, otp);
-
-      if (response.message === "OTP validé avec succès") {
-        setSuccessMessage("OTP vérifié avec succès. Redirection...");
+      const response = await resetPassword({ email, otp, newPassword });
+      console.log(response);
+      if (response === "Mot de passe réinitialisé avec succès") {
+        setSuccessMessage("Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter.");
+        localStorage.removeItem("reset-email"); 
         setTimeout(() => {
-          navigate("/dashboard"); 
+          navigate("/"); 
         }, 2000);
       } else {
-        setError("Code OTP invalide ou expiré.");
+        setError("Échec de la réinitialisation du mot de passe.");
       }
     } catch (err) {
-      console.error("Erreur lors de la vérification OTP:", err);
-      setError("Échec de la vérification du code.");
-    }
-  };
-
-  const handleResendOtp = async () => {
-    setError("");
-    setSuccessMessage("");
-
-    const email = localStorage.getItem("user-email");
-    if (!email) {
-      setError("Aucun email trouvé. Veuillez réessayer.");
-      return;
-    }
-
-    try {
-      const response = await resendOtp(email);
-      if (response.message === "OTP renvoyé avec succès") {
-        setSuccessMessage("Un nouveau code OTP a été envoyé à votre email.");
-      } else {
-        setError("Échec de l'envoi du nouveau code OTP.");
-      }
-    } catch (err) {
-      console.error("Erreur lors de l'envoi de l'OTP:", err);
-      setError("Échec de l'envoi du nouveau code OTP.");
+      console.error("Erreur lors de la réinitialisation du mot de passe:", err);
+      setError("Une erreur s'est produite lors de la réinitialisation du mot de passe.");
     }
   };
 
@@ -69,7 +48,15 @@ export default function VerifyOtpPage() {
       name: "otp",
       value: otp,
       onChange: (e) => setOtp(e.target.value),
-      placeholder: "Entrez votre code OTP",
+      placeholder: "Entrez le code OTP",
+    },
+    {
+      label: "Nouveau mot de passe",
+      type: "password",
+      name: "newPassword",
+      value: newPassword,
+      onChange: (e) => setNewPassword(e.target.value),
+      placeholder: "Entrez votre nouveau mot de passe",
     },
   ];
 
@@ -86,20 +73,22 @@ export default function VerifyOtpPage() {
       </div>
 
       <div className="mb-8 text-center">
-        <p className="text-gray-700">Veuillez entrer le code OTP envoyé à votre email.</p>
+        <p className="text-gray-700">
+          Veuillez entrer le code OTP envoyé à votre email et votre nouveau mot de passe.
+        </p>
       </div>
 
       {error && <p className="text-red-500 text-center mb-4">{error}</p>}
       {successMessage && <p className="text-green-500 text-center mb-4">{successMessage}</p>}
 
-      <AuthForm fields={fields} onSubmit={handleSubmit} buttonText="Vérifier" />
+      <AuthForm fields={fields} onSubmit={handleResetPassword} buttonText="Réinitialiser le mot de passe" />
 
       <div className="text-center mt-4">
         <button
-          onClick={handleResendOtp}
-          className="text-blue-500 hover:text-blue-700 underline"
+          onClick={() => navigate("/requestPassword")}
+          className="text-[#2e3f6e] hover:underline"
         >
-          Renvoyer le code OTP
+          Réessayer avec un autre email
         </button>
       </div>
     </AuthLayout>

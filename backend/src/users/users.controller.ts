@@ -35,5 +35,18 @@ export class UsersController {
     const isValid = await this.usersService.verifyOTP(body.email, body.otp, deviceId);
     return isValid ? { message: 'OTP validé avec succès' } : { message: 'OTP invalide ou expiré' };
   }
+  @Post('ResetPassword')
+  async ResetPassword(@Body() body: SendOtpDto) {
+    console.log(body);
+    return this.usersService.resetPassword(body.email, body.newPassword);
+  }
+  @Post('ChangePassword')
+  async ChangePassword(@Body() body: SendOtpDto,oldPassword:string, newPassword:string) {
+    return this.usersService.changePassword(body.email, oldPassword, newPassword);
+  }
+  @Post('resendOtp')
+  async resendOtp(@Body() body: SendOtpDto) {
+    return this.usersService.resendOtp(body.email);
+  }
   
 }

@@ -172,6 +172,36 @@ export class UsersService {
 
     await transporter.sendMail(mailOptions);
   }
+
+  async resetPassword(email: string, newPassword: string): Promise<string> {
+    try {
+      const user = await this.findByEmailOrThrow(email);
+      user.password = await bcrypt.hash(newPassword, 10);
+      await user.save();
+      return 'Mot de passe réinitialisé avec succès';
+    } catch (error) {
+      console.log(error)
+      throw new BadRequestException('Erreur lors de la réinitialisation du mot de passe');
+    }	
+  }
+  async changePassword(email: string, oldPassword: string, newPassword: string): Promise<void> {
+    const user = await this.findByEmailOrThrow(email);
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Ancien mot de passe incorrect');
+    }
+    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
+    user.password = await bcrypt.hash(newPassword, saltRounds);
+    await user.save();
+  }
+  async resendOtp(email: string): Promise<void> {
+    const user = await this.findByEmailOrThrow(email);
+    const otp = await this.generateOTP(email);
+    await this.sendOTP(email, otp); 
+  }
+ 
+
+
   
 
 
@@ -186,6 +216,7 @@ export class UsersService {
     await user.save();
     return token;
   }
+  
   
 
   async findByEmailOrThrow(email: string): Promise<User> {

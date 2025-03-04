@@ -2,29 +2,30 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthLayout from "../components/Auth/AuthLayout";
 import AuthForm from "../components/Auth/AuthForm";
-import { login } from "../api/userService";
+import { resendOtp } from "../api/userService";
 import riadLogo from "../assets/riad-logo.png";
 
-export default function LoginPage() {
+export default function RequestResetPasswordPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccessMessage("");
 
     try {
-      const response = await login({ email, password });
-
-      console.log(response);
-      localStorage.setItem("user-email", response?.email);
-      navigate("/dashboard"); // Redirigez vers le tableau de bord
+      const response = await resendOtp(email);
+      setSuccessMessage("Un code OTP a été envoyé à votre email.");
+      localStorage.setItem("reset-email", email);
+      setTimeout(() => {
+        navigate("/reset-password");
+      }, 2000);
     } catch (err) {
-      console.error("Échec de connexion:", err);
-      setError("Identifiant ou mot de passe incorrect.");
+      console.error("Erreur lors de l'envoi de l'OTP:", err);
+      setError("Échec de l'envoi du code OTP.");
     }
   };
 
@@ -35,17 +36,7 @@ export default function LoginPage() {
       name: "email",
       value: email,
       onChange: (e) => setEmail(e.target.value),
-      placeholder: "Email",
-    },
-    {
-      label: "Mot de passe",
-      type: "password",
-      name: "password",
-      value: password,
-      onChange: (e) => setPassword(e.target.value),
-      placeholder: "Mot de passe",
-      showPassword: showPassword,
-      setShowPassword: setShowPassword,
+      placeholder: "Entrez votre email",
     },
   ];
 
@@ -63,26 +54,27 @@ export default function LoginPage() {
 
       <div className="mb-8 text-center">
         <p className="text-gray-700">
-          Veuillez saisir votre identifiant et mot de passe pour vous connecter.
+          Veuillez saisir votre email pour réinitialiser votre mot de passe.
         </p>
       </div>
 
       {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+      {successMessage && (
+        <p className="text-green-500 text-center mb-4">{successMessage}</p>
+      )}
 
-      <AuthForm fields={fields} onSubmit={handleSubmit} buttonText="Se connecter" />
+      <AuthForm
+        fields={fields}
+        onSubmit={handleSendOtp}
+        buttonText="Envoyer le code OTP"
+      />
 
       <div className="text-center mt-4">
-        <p className="text-gray-600">
-          Vous n'avez pas de compte?{" "}
-          <a href="/register" className="text-[#2e3f6e] hover:underline">
-            S'inscrire
-          </a>
-        </p>
         <button
-          onClick={() => navigate("/requestPassword")} 
+          onClick={() => navigate("/")}
           className="text-[#2e3f6e] hover:underline"
         >
-          Mot de passe oublié ?
+          Retour à la connexion
         </button>
       </div>
     </AuthLayout>
