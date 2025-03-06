@@ -1,50 +1,56 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { fournisseur } from './schema/fournisseur.schema';
-import { CreatefournisseurDTO} from './DTO/create-fournisseur.dto';
-import { UpdatefournisseurDTO} from './DTO/update-fournisseur.dto';
+import { CreatefournisseurDTO } from './DTO/create-fournisseur.dto';
 
 @Injectable()
 export class FournisseursService {
   constructor(
-    @InjectModel(fournisseur.name) private fournisseurModel: Model<fournisseur>,
+    @InjectModel(fournisseur.name) private readonly fournisseurModel: Model<fournisseur>,
   ) {}
 
-  async creer(creerFournisseurDTO: CreatefournisseurDTO): Promise<fournisseur> {
-    const nouveauFournisseur = new this.fournisseurModel(creerFournisseurDTO);
-    return nouveauFournisseur.save();
-  }
+  async create(createFournisseurDto: CreatefournisseurDTO): Promise<fournisseur> {
+    const { name, icon, categoryId } = createFournisseurDto;
 
-  async trouverTous(): Promise<fournisseur[]> {
-    return this.fournisseurModel.find().exec();
-  }
-
-  async trouverUn(id: string): Promise<fournisseur> {
-    const fournisseur = await this.fournisseurModel.findById(id).exec();
-    if (!fournisseur) {
-      throw new NotFoundException('Fournisseur non trouvé');
+    // Vérifier si le fournisseur existe déjà
+    const existingFournisseur = await this.fournisseurModel.findOne({ name }).exec();
+    if (existingFournisseur) {
+      throw new BadRequestException('Un fournisseur avec ce nom existe déjà');
     }
-    return fournisseur;
+
+    // Créer un nouveau fournisseur
+    const newFournisseur = new this.fournisseurModel({
+      name,
+      icon,
+      categoryId,
+    });
+
+    return newFournisseur.save();
   }
 
-  async mettreAJour(
-    id: string,
-    updatefournisseurDTO: UpdatefournisseurDTO,
-  ): Promise<fournisseur> {
-    const fournisseurMisAJour = await this.fournisseurModel
-      .findByIdAndUpdate(id, updatefournisseurDTO, { new: true })
+  async findAll(): Promise<fournisseur[]> {
+    return this.fournisseurModel.find().populate('category').exec();
+  }
+
+  async findByCategory(categoryId: string): Promise<fournisseur[]> {
+    return this.fournisseurModel
+      .find({ category: categoryId })
+      .populate('category')
       .exec();
-    if (!fournisseurMisAJour) {
-      throw new NotFoundException('Fournisseur non trouvé');
-    }
-    return fournisseurMisAJour;
   }
 
-  async supprimer(id: string): Promise<void> {
-    const result = await this.fournisseurModel.deleteOne({ _id: id }).exec();
-    if (result.deletedCount === 0) {
-      throw new NotFoundException('Fournisseur non trouvé');
-    }
+  async findOne(id: string): Promise<fournisseur> {
+    return this.fournisseurModel.findById(id).populate('category').exec();
+  }
+
+  async update(id: string, updateFournisseurDto: CreatefournisseurDTO): Promise<fournisseur> {
+    return this.fournisseurModel
+      .findByIdAndUpdate(id, updateFournisseurDto, { new: true })
+      .exec();
+  }
+
+  async delete(id: string): Promise<fournisseur> {
+    return this.fournisseurModel.findByIdAndDelete(id).exec();
   }
 }

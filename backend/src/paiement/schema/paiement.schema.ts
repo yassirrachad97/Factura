@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { User } from '../../users/schema/user.schema';
-import { factures } from '../../factures/schema/facture-schema';
+import { factures } from '../../factures/schema/facture.schema';
 
 @Schema({ timestamps: true })
 export class Payment extends Document {

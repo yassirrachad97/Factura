@@ -1,15 +1,15 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Schema as MongooseSchema, Types } from 'mongoose';
 import { User } from '../../users/schema/user.schema';
 import { fournisseur } from '../../fournisseurs/schema/fournisseur.schema';
 
 @Schema({ timestamps: true })
 export class factures extends Document {
-  @Prop({ type: String, ref: 'User', required: true })
-  userId: string;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
+  userId: Types.ObjectId;
 
-  @Prop({ type: String, ref: 'fournisseur', required: true })
-  fournisseurId: string;
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Fournisseur', required: true })
+  fournisseurId: Types.ObjectId;
 
   @Prop({ required: true })
   amount: number;
@@ -22,6 +22,9 @@ export class factures extends Document {
 
   @Prop({ default: false })
   isPaid: boolean;
+
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
+  createdBy: Types.ObjectId;
 }
 
 export const InvoiceSchema = SchemaFactory.createForClass(factures);

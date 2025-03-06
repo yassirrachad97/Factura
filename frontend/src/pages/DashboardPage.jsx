@@ -3,97 +3,73 @@ import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Dashboard/Sidebar";
 import ServiceGrid from "../components/Services/ServiceGrid";
 import CategoryHeader from "../components/Dashboard/CategoryHeader";
-import { fetchServices } from "../api/serviceAPI";
+import { getCategory, getAllCategories } from "../api/categoryService";
+import { getFournisseursByCategory } from "../api/fournisseurService";
 
 export default function DashboardPage() {
   const { categoryId = "opar" } = useParams();
   const navigate = useNavigate();
+  const [currentCategory, setCurrentCategory] = useState(null);
+  const [categories, setCategories] = useState({});
   const [services, setServices] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredServices, setFilteredServices] = useState([]);
 
-
-  const categories = {
-    opar: { 
-      name: "Opar Token", 
-      icon: "💎", 
-      description: "Gérez vos tokens et transactions" 
-    },
-    assurance: { 
-      name: "Assurance et sécurité sociale", 
-      icon: "🛡️", 
-      description: "Services d'assurance et de protection sociale" 
-    },
-    eau: { 
-      name: "Eau et Électricité", 
-      icon: "💧", 
-      description: "Gestion de vos factures et consommation" 
-    },
-    telephone: { 
-      name: "Téléphonie et Internet", 
-      icon: "📱", 
-      description: "Services de communication et connexion" 
-    },
-    transport: { 
-      name: "Transport", 
-      icon: "🚌", 
-      description: "Billets et abonnements de transport" 
-    },
-    transfert: { 
-      name: "Transfert d'argent", 
-      icon: "💸", 
-      description: "Solutions pour envoyer et recevoir de l'argent" 
-    },
-    impots: { 
-      name: "Impôts & Taxes", 
-      icon: "📊", 
-      description: "Gestion de vos obligations fiscales" 
-    },
-    achat: { 
-      name: "Achat Internet", 
-      icon: "🛒", 
-      description: "Services de paiement en ligne" 
-    },
-    societes: { 
-      name: "Sociétés de financement", 
-      icon: "🏢", 
-      description: "Partenaires financiers et options de crédit" 
-    },
-    comptes: { 
-      name: "Comptes de paiement", 
-      icon: "💳", 
-      description: "Gérez vos comptes et moyens de paiement" 
-    },
-    services: { 
-      name: "Services M2T", 
-      icon: "🔧", 
-      description: "Services additionnels et support" 
-    },
-  };
-
-  // Récupération des services
+ 
   useEffect(() => {
-    const loadServices = async () => {
+    const fetchCategories = async () => {
+      try {
+        const categoriesData = await getAllCategories();
+        const categoriesMap = {};
+        categoriesData.forEach(cat => {
+          categoriesMap[cat.slug] = {
+            id: cat._id,
+            name: cat.name,
+            icon: cat.icon,
+            description: cat.description
+          };
+        });
+        setCategories(categoriesMap);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    const loadCategoryAndServices = async () => {
       setIsLoading(true);
       try {
-        const data = await fetchServices(categoryId);
-        setServices(data);
-        setFilteredServices(data);
+        const categoryData = await getCategory(categoryId);
+        setCurrentCategory(categoryData);
+        
+        const servicesData = await getFournisseursByCategory(categoryData._id);
+        const formattedServices = servicesData.map(service => ({
+          id: service._id,
+          name: service.name,
+          description: service.description,
+          logo: service.logo
+        }));
+        
+        setServices(formattedServices);
+        setFilteredServices(formattedServices);
         setError("");
       } catch (err) {
-        console.error("Failed to fetch services:", err);
-        setError("Échec du chargement des services. Veuillez réessayer.");
+        console.error("Failed to fetch data:", err);
+        setError("Failed to load category and services");
       } finally {
         setIsLoading(false);
       }
     };
-
-    loadServices();
+    
+    loadCategoryAndServices();
   }, [categoryId]);
 
-  // Filtrage des services en fonction du terme de recherche
+
+
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setFilteredServices(services);
@@ -106,12 +82,11 @@ export default function DashboardPage() {
     }
   }, [searchTerm, services]);
 
-  // Gestion du click sur une catégorie populaire
+ 
   const handleCategoryClick = (id) => {
     navigate(`/dashboard/${id}`);
   };
 
-  // Obtention des catégories populaires (exemple statique - à remplacer par des données réelles)
   const popularCategories = ["telephone", "eau", "transfert", "impots"];
 
   return (
@@ -119,17 +94,17 @@ export default function DashboardPage() {
       <Sidebar activeItem={categoryId} />
 
       <div className="flex-1 overflow-auto">
-        {/* Header avec bannière et recherche */}
+      
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 shadow-md">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h1 className="text-2xl font-bold flex items-center">
-                  {categories[categoryId]?.icon && <span className="mr-2">{categories[categoryId].icon}</span>}
-                  {categories[categoryId]?.name || "Dashboard"}
+                  {currentCategory?.icon && <span className="mr-2">{currentCategory.icon}</span>}
+                  {currentCategory?.name || "Dashboard"}
                 </h1>
                 <p className="text-blue-100 mt-1">
-                  {categories[categoryId]?.description || "Accédez à tous vos services"}
+                  {currentCategory?.description || "Accédez à tous vos services"}
                 </p>
               </div>
               
@@ -156,30 +131,34 @@ export default function DashboardPage() {
         </div>
 
         <div className="p-6 max-w-7xl mx-auto">
-          {/* Catégories populaires */}
-          {categoryId === "opar" && (
+         
+          {categoryId === "opar" && categories && (
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Catégories populaires</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {popularCategories.map(catId => (
-                  <div 
-                    key={catId}
-                    onClick={() => handleCategoryClick(catId)}
-                    className="bg-white rounded-lg p-4 shadow hover:shadow-md transition-shadow 
-                              cursor-pointer border border-gray-100 hover:border-blue-200 flex items-center"
-                  >
-                    <span className="text-2xl mr-3">{categories[catId].icon}</span>
-                    <div>
-                      <h3 className="font-medium text-gray-800">{categories[catId].name}</h3>
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-1">{categories[catId].description}</p>
+                {popularCategories.map(catId => {
+                  const category = categories[catId];
+                  if (!category) return null;
+                  
+                  return (
+                    <div 
+                      key={catId}
+                      onClick={() => handleCategoryClick(catId)}
+                      className="bg-white rounded-lg p-4 shadow hover:shadow-md transition-shadow 
+                                cursor-pointer border border-gray-100 hover:border-blue-200 flex items-center"
+                    >
+                      <span className="text-2xl mr-3">{category.icon}</span>
+                      <div>
+                        <h3 className="font-medium text-gray-800">{category.name}</h3>
+                        <p className="text-xs text-gray-500 mt-1 line-clamp-1">{category.description}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* Messages d'erreur */}
           {error && (
             <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded mb-6 flex items-start">
               <svg className="h-5 w-5 text-red-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -198,16 +177,16 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* État de chargement */}
+          
           {isLoading ? (
             <div className="flex flex-col items-center justify-center p-12">
-              {/* Spinner de chargement personnalisé (sans dépendance externe) */}
+              
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
               <p className="text-gray-600">Chargement des services...</p>
             </div>
           ) : (
             <>
-              {/* Résultats de recherche */}
+             
               {searchTerm && (
                 <div className="mb-6">
                   <h2 className="text-lg text-gray-700 mb-3">
@@ -218,7 +197,7 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* Grille de services avec état vide */}
+             
               {filteredServices.length === 0 && !isLoading && !error ? (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
                   <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

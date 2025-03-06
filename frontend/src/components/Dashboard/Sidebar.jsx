@@ -1,64 +1,115 @@
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../../features/auth/authSlice';
+import { useEffect, useState } from 'react';
+import { getAllCategories } from '../../api/categoryService';
+import riadLogo from "../../assets/riad-logo.png";
 
 export default function Sidebar({ activeItem }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  
-  // Icônes utilisant les mêmes noms que Font Awesome mais avec emojis/labels descriptifs 
-  // pour une meilleure compatibilité visuelle
-  const menuItems = [
-    { id: 'opar', icon: '💎', label: 'Opar Token', description: 'Gérez vos tokens' },
-    { id: 'assurance', icon: '🛡️', label: 'Assurance', description: 'Assurance et sécurité sociale' },
-    { id: 'eau', icon: '💧', label: 'Eau & Élec.', description: 'Eau et Électricité' },
-    { id: 'telephone', icon: '📱', label: 'Téléphonie', description: 'Téléphonie et Internet' },
-    { id: 'transport', icon: '🚌', label: 'Transport', description: 'Services de transport' },
-    { id: 'transfert', icon: '💸', label: 'Transfert', description: 'Transfert d\'argent' },
-    { id: 'impots', icon: '📊', label: 'Impôts', description: 'Impôts & Taxes' },
-    { id: 'achat', icon: '🛒', label: 'Achat', description: 'Achat Internet' },
-    { id: 'societes', icon: '🏢', label: 'Sociétés', description: 'Sociétés de financement' },
-    { id: 'comptes', icon: '💳', label: 'Comptes', description: 'Comptes de paiement' },
-    { id: 'services', icon: '🔧', label: 'Services', description: 'Services M2T' },
-  ];
+  const { user, role } = useSelector(state => state.auth);
+  const [isLoading, setIsLoading] = useState(true); 
+  const [error, setError] = useState(null);
+  const dispatch = useDispatch(); 
+  const navigate = useNavigate(); 
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getAllCategories();
+        const formattedCategories = data.map(category => ({
+          id: category._id,
+          slug: category.slug,
+          icon: category.icon,
+          name: category.name,
+          description: category.description,
+          group: category.group,
+          order: category.order
+        }));
+        setCategories(formattedCategories);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        setError('Failed to load categories');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
+
+  const handleLogout = () => {
+    dispatch(logout()); 
+    navigate('/');
+  };
+
+  const menuItems = categories.map(category => ({
+    id: category.slug || '',
+    icon: category.icon || '📁',
+    label: category.name || '',
+    description: category.description || '',
+    group: category.group || ''
+  }));
 
   const managementItems = [
     { id: 'profile', icon: '👤', label: 'Profile', description: 'Gérer votre profil' },
     { id: 'transactions', icon: '📝', label: 'Transactions', description: 'Historique des transactions' },
-    { id: 'logout', icon: '🚪', label: 'Déconnexion', description: 'Se déconnecter' },
+    { id: 'logout', icon: '🚪', label: 'Déconnexion', description: 'Se déconnecter', onClick: handleLogout },
   ];
 
-  // Fonction pour regrouper les éléments par catégorie
+  const adminItems = [
+    { id: 'users', icon: '👥', label: 'Utilisateurs', description: 'Gérer les utilisateurs' },
+    { id: 'fournisseurs', icon: '🏭', label: 'Fournisseurs', description: 'Gérer les fournisseurs' },
+  ];
+
   const categoryGroups = [
     { title: "SERVICES ESSENTIELS", items: ['opar', 'eau', 'telephone', 'impots'] },
     { title: "SERVICES FINANCIERS", items: ['transfert', 'comptes', 'societes', 'assurance'] },
     { title: "AUTRES SERVICES", items: ['transport', 'achat', 'services'] },
   ];
 
-  // Obtenir tous les éléments organisés par groupe
   const getItemsByCategory = () => {
+    if (!menuItems || menuItems.length === 0) return [];
+    
     return categoryGroups.map(group => {
-      const groupItems = menuItems.filter(item => group.items.includes(item.id));
+      const groupItems = menuItems.filter(item => 
+        item.id && group.items.includes(item.id)
+      );
       return { ...group, menuItems: groupItems };
     });
   };
 
   const organizedItems = getItemsByCategory();
 
-  // Fonction pour basculer la barre latérale
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
 
   return (
     <div className={`transition-all duration-300 bg-[#1e1e2d] text-white flex-shrink-0 border-r border-gray-800 h-screen overflow-y-auto relative ${isCollapsed ? 'w-20' : 'w-64'}`}>
-      {/* Logo et Titre */}
+    
       <div className="flex items-center justify-between p-4 border-b border-gray-800">
-        <div className="flex items-center">
-          <div className="bg-blue-500 text-white rounded-lg p-2 mr-2">
-            <span className="text-xl">F</span>
-          </div>
-          {!isCollapsed && <span className="font-bold text-xl">Factura</span>}
-        </div>
-        <button 
+      <div className="flex items-center">
+    <img 
+      src={riadLogo} 
+      alt="RIAD Logo" 
+      className={`transition-all duration-300 object-contain ${
+        isCollapsed ? 'h-8 w-8' : 'h-10 w-auto'
+      }`} 
+    />
+    {!isCollapsed && <span className="font-bold text-xl ml-2">Factura</span>}
+  </div>
+  <button 
           onClick={toggleSidebar} 
           className="text-gray-400 hover:text-white transition-colors"
         >
@@ -74,9 +125,9 @@ export default function Sidebar({ activeItem }) {
         </button>
       </div>
 
-      {/* Menu Principal */}
+
       <div className="mt-4">
-        {/* Afficher les éléments par catégorie */}
+     
         {organizedItems.map((group, groupIndex) => (
           <div key={groupIndex} className="mb-4">
             {!isCollapsed && (
@@ -109,7 +160,7 @@ export default function Sidebar({ activeItem }) {
           </div>
         ))}
 
-        {/* Section Gestion */}
+
         <div className="mt-2 border-t border-gray-800 pt-4">
           {!isCollapsed && (
             <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
@@ -117,6 +168,23 @@ export default function Sidebar({ activeItem }) {
             </div>
           )}
           {managementItems.map((item) => (
+            <div
+              key={item.id}
+              onClick={item.onClick}
+              className={`flex items-center px-4 py-3 text-sm transition-colors duration-200 cursor-pointer
+                ${activeItem === item.id 
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white' 
+                  : 'text-gray-300 hover:bg-gray-800'
+                } ${isCollapsed ? 'justify-center' : ''}`}
+              title={item.description}
+            >
+              <span className={`${isCollapsed ? 'text-xl' : 'mr-3'}`}>{item.icon}</span>
+              {!isCollapsed && <span>{item.label}</span>}
+            </div>
+          ))}
+
+         
+          {role === 'admin' && adminItems.map((item) => (
             <Link 
               key={item.id}
               to={`/dashboard/${item.id}`} 
@@ -134,16 +202,16 @@ export default function Sidebar({ activeItem }) {
         </div>
       </div>
 
-      {/* Profil utilisateur */}
+    
       <div className="absolute bottom-0 w-full border-t border-gray-800 p-4 bg-[#1a1a27]">
         <div className="flex items-center">
           <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center">
-            <span className="text-white text-sm font-medium">UT</span>
+            <span className="text-white text-sm font-medium">{user?.username?.charAt(0).toUpperCase() || 'U'}</span>
           </div>
           {!isCollapsed && (
             <div className="ml-3">
-              <p className="text-sm font-medium text-white">Utilisateur</p>
-              <p className="text-xs text-gray-400">Compte Standard</p>
+              <p className="text-sm font-medium text-white">{user?.username || 'Utilisateur'}</p>
+              <p className="text-xs text-gray-400">{role === 'admin' ? 'Admin' : 'Compte Standard'}</p>
             </div>
           )}
         </div>

@@ -19,25 +19,20 @@ export class AuthService {
   
    
   
-    const isNewDevice = user.devices?.find((device) => {
-      if (device.deviceName === deviceId) {
-        return true;
-      } else {
-        return false;
-      }
-    });
+    const isNewDevice = !user.devices?.some((device) => 
+      device.deviceName === deviceId && device.iscourrant === true
+    );
     console.log(isNewDevice)
   
-    if (!isNewDevice) {
+    if (isNewDevice) {
       const otp = await this.usersService.generateOTP(body.email);
       await this.usersService.sendOTP(body.email, otp);
-  
+    
       return {
         message: 'Nouveau périphérique détecté. Vérifiez votre email pour autoriser cet appareil.',
         status: 201,
-        email : user.email
-    
-    }
+        email: user.email,
+      };
     }
     const payload = { sub: user._id, email: user.email };
     const token = this.jwtService.sign(payload, {
@@ -45,7 +40,14 @@ export class AuthService {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
   
-    return { token, status: 200 };
+   return {
+  token,
+  status: 200,
+  user: {
+    email: user.email,
+    role: user.role,
+  },
+};
   }
   
 

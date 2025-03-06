@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import AuthLayout from "../components/Auth/AuthLayout";
 import AuthForm from "../components/Auth/AuthForm";
 import { login } from "../api/userService";
+import { setCredentials } from "../features/auth/authSlice";
 import riadLogo from "../assets/riad-logo.png";
 
 export default function LoginPage() {
@@ -11,6 +13,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,8 +23,30 @@ export default function LoginPage() {
       const response = await login({ email, password });
 
       console.log(response);
-      localStorage.setItem("user-email", response?.email);
-      navigate("/dashboard"); // Redirigez vers le tableau de bord
+
+     
+      if (response.status === 201) {
+      
+        localStorage.setItem("user-email", response.email);
+        
+       
+        navigate("/verifyOtp", { 
+          state: { 
+            message: "Un nouveau périphérique a été détecté. Veuillez vérifier votre email.",
+            email: response.email 
+          } 
+        });
+        return;
+      }
+
+  
+      dispatch(setCredentials({
+        user: response.user,
+        token: response.token
+      }));
+      localStorage.setItem("token", response.token);
+      localStorage.setItem("user-email", response.user.email);
+      navigate("/dashboard"); 
     } catch (err) {
       console.error("Échec de connexion:", err);
       setError("Identifiant ou mot de passe incorrect.");

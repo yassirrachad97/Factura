@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { factures } from '../factures/schema/facture-schema';
+import { factures } from './schema/facture.schema';
 import { User } from '../users/schema/user.schema';
 import { fournisseur } from '../fournisseurs/schema/fournisseur.schema';
 import { CreateFactureDTO} from './DTO/create-facture.dto';

@@ -8,4 +8,8 @@ export class CreatefournisseurDTO {
   @IsNotEmpty()
   @IsString()
   icon: string;
+
+  @IsNotEmpty()
+  @IsString()
+  categoryId: string;
 }

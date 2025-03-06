@@ -9,6 +9,8 @@ import { FournisseursModule } from './fournisseurs/fournisseurs.module';
 import { FacturesModule } from './factures/factures.module';
 import { PaiementModule } from './paiement/paiement.module';
 import { HistoriqueModule } from './historique/historique.module';
+import { CategoryModule } from './category/category.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { HistoriqueModule } from './historique/historique.module';
     FacturesModule,
     PaiementModule,
     HistoriqueModule,
+    CategoryModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [AppService, ],

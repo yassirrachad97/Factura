@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import AuthLayout from "../components/Auth/AuthLayout";
 import AuthForm from "../components/Auth/AuthForm";
-import { verifyOtp, resendOtp } from "../api/userService"; // Importez resendOtp
+import { verifyOtp, resendOtp } from "../api/userService";
+import { setCredentials } from "../features/auth/authSlice";
 import riadLogo from "../assets/riad-logo.png";
 
 export default function VerifyOtpPage() {
@@ -10,13 +12,17 @@ export default function VerifyOtpPage() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const dispatch = useDispatch();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccessMessage("");
 
-    const email = localStorage.getItem("user-email");
+    // Try to get email from localStorage or location state
+    const email = localStorage.getItem("user-email") || location.state?.email;
+
     if (!email) {
       setError("Aucun email trouvé. Veuillez réessayer.");
       return;
@@ -24,18 +30,37 @@ export default function VerifyOtpPage() {
 
     try {
       const response = await verifyOtp(email, otp);
+      console.log("Verify OTP Response:", response);
 
-      if (response.message === "OTP validé avec succès") {
+      // Add more flexible checking for successful verification
+      if (response && (response.message === "OTP validé avec succès" || response.status === 200)) {
+        // Ensure we have user and token before dispatching
+        if (response.user && response.token) {
+          dispatch(setCredentials({
+            user: response.user,
+            token: response.token
+          }));
+          localStorage.setItem("token", response.token);
+          localStorage.setItem("user-email", response.user.email);
+        } else if (response.token) {
+          // Fallback if user object is not present
+          dispatch(setCredentials({
+            user: { email },
+            token: response.token
+          }));
+          localStorage.setItem("token", response.token);
+        }
+
         setSuccessMessage("OTP vérifié avec succès. Redirection...");
         setTimeout(() => {
-          navigate("/dashboard"); 
+          navigate("/dashboard");
         }, 2000);
       } else {
-        setError("Code OTP invalide ou expiré.");
+        setError(response?.message || "Code OTP invalide ou expiré.");
       }
     } catch (err) {
       console.error("Erreur lors de la vérification OTP:", err);
-      setError("Échec de la vérification du code.");
+      setError(err.response?.data?.message || "Échec de la vérification du code.");
     }
   };
 
@@ -43,7 +68,9 @@ export default function VerifyOtpPage() {
     setError("");
     setSuccessMessage("");
 
-    const email = localStorage.getItem("user-email");
+    // Try to get email from localStorage or location state
+    const email = localStorage.getItem("user-email") || location.state?.email;
+
     if (!email) {
       setError("Aucun email trouvé. Veuillez réessayer.");
       return;
