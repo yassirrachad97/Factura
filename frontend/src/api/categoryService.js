@@ -1,10 +1,32 @@
 import axiosInstance from './axiosInstance';
 
-export const getAllCategories = () => 
-  axiosInstance.get('/categories').then(res => res.data);
+export const getAllCategories = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axiosInstance.get('/categories', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
 
-export const getCategory = (identifier) => 
-  axiosInstance.get(`/categories/${identifier}`).then(res => res.data);
+export const getCategory = async (identifier) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axiosInstance.get(`/categories/${identifier}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
 
 export const createCategory = (data) => 
   axiosInstance.post('/categories', data).then(res => res.data);

@@ -1,11 +1,10 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:3000/api', 
-  withCredentials: true, 
+  baseURL: 'http://localhost:3000/api'
 });
 
-
+// Add a request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -19,12 +18,12 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Add a response interceptor
+// Add a response interceptor to handle unauthorized errors
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
+      // Redirect to login page or handle unauthorized error
       window.location.href = '/';
     }
     return Promise.reject(error);

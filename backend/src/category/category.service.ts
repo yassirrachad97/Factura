@@ -10,7 +10,7 @@ export class CategoryService {
   ) {}
 
   async findAll(): Promise<Category[]> {
-    return this.categoryModel.find().sort({ order: 1 }).exec();
+    return this.categoryModel.find().exec();
   }
 
   async findBySlug(slug: string): Promise<Category> {
