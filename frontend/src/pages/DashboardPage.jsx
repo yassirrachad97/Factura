@@ -7,7 +7,9 @@ import FournisseurManagement from "../components/Dashboard/FournisseurManagement
 
 import { getCategory, getAllCategories } from "../api/categoryService";
 import { getFournisseursByCategory } from "../api/fournisseurService";
-import { useSelector } from "react-redux"; // Import useSelector to check user role
+import { useSelector } from "react-redux"; 
+import UserManagement from "../components/Dashboard/UserManagement";
+import Profile from "../components/Dashboard/Profile";
 
 export default function DashboardPage() {
   const { categoryId = "opar" } = useParams();
@@ -22,7 +24,8 @@ export default function DashboardPage() {
   const [filteredServices, setFilteredServices] = useState([]);
 
   // Admin specific section handlers
-  const isAdminSection = role === "admin" && ["categories", "fournisseurs", "users"].includes(categoryId);
+  const isAdminSection = role === "admin" && ["categories", "fournisseurs", "users", "statistique"].includes(categoryId);
+  const isProfileSection = categoryId === "profile" && role !== "admin";
  
   useEffect(() => {
     const fetchCategories = async () => {
@@ -46,8 +49,7 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-   
-    if (isAdminSection) return;
+    if (isAdminSection || isProfileSection) return;
 
     const loadCategoryAndServices = async () => {
       setIsLoading(true);
@@ -68,14 +70,18 @@ export default function DashboardPage() {
         setError("");
       } catch (err) {
         console.error("Failed to fetch data:", err);
-        setError("Failed to load category and services");
+        if (err.response?.status === 401) {
+          navigate('/');
+        } else {
+          setError("Failed to load category and services");
+        }
       } finally {
         setIsLoading(false);
       }
     };
     
     loadCategoryAndServices();
-  }, [categoryId, isAdminSection]);
+  }, [categoryId, isAdminSection, isProfileSection, navigate]);
 
   useEffect(() => {
     if (searchTerm.trim() === "") {
@@ -96,16 +102,20 @@ export default function DashboardPage() {
   const popularCategories = ["telephone", "eau", "transfert", "impots"];
 
   // Function to render admin sections based on categoryId
-  const renderAdminSection = () => {
-    switch (categoryId) {
-      case "categories":
-        return <CategoryManagement />;
-      case "fournisseurs":
-        return <FournisseurManagement/>;
-      case "users":
-        return <div className="p-6">Gestion des utilisateurs (à implémenter)</div>;
-      default:
-        return null;
+  const renderSection = () => {
+    if (isAdminSection) {
+      switch (categoryId) {
+        case "categories":
+          return <CategoryManagement />;
+        case "fournisseurs":
+          return <FournisseurManagement/>;
+        case "users":
+          return <UserManagement/>;
+        case "statistique":
+          return <div>Statistiques</div>;
+      }
+    } else if (isProfileSection) {
+      return <Profile />;
     }
   };
 
@@ -115,8 +125,9 @@ export default function DashboardPage() {
 
       <div className="flex-1 overflow-auto">
         {isAdminSection ? (
-          // Render admin section
-          renderAdminSection()
+          renderSection()
+        ) : isProfileSection ? (
+          <Profile />
         ) : (
           // Regular dashboard content
           <>

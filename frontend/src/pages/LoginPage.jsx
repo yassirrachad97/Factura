@@ -34,6 +34,7 @@ export default function LoginPage() {
           state: { 
             message: "Un nouveau périphérique a été détecté. Veuillez vérifier votre email.",
             email: response.email 
+            
           } 
         });
         return;
@@ -44,9 +45,8 @@ export default function LoginPage() {
         user: response.user,
         token: response.token
       }));
-      localStorage.setItem("token", response.token);
-      localStorage.setItem("user-email", response.user.email);
-      navigate("/dashboard"); 
+      // localStorage handling is now done in the auth slice
+      navigate("/dashboard");
     } catch (err) {
       console.error("Échec de connexion:", err);
       setError("Identifiant ou mot de passe incorrect.");

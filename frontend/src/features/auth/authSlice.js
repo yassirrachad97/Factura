@@ -2,11 +2,11 @@ import { createSlice } from '@reduxjs/toolkit';
 import { loginUser } from './authThunks';
 
 const initialState = {
-  user: null,
+  user: JSON.parse(localStorage.getItem('user')) || null,
   token: localStorage.getItem('token') || null,
   status: 'idle',
   error: null,
-  role: null,
+  role: localStorage.getItem('role') || null
 };
 
 const authSlice = createSlice({
@@ -17,14 +17,19 @@ const authSlice = createSlice({
       const { user, token } = action.payload;
       state.user = user;
       state.token = token;
-      state.role = user?.role;
+      state.role = user.role;
+      localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('token', token);
+      localStorage.setItem('role', user.role);
     },
     logout: (state) => {
       state.user = null;
       state.token = null;
       state.role = null;
+      localStorage.removeItem('user');
       localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('user-email');
     },
   },
   extraReducers: (builder) => {

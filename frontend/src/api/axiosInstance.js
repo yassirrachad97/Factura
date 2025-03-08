@@ -23,7 +23,12 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Redirect to login page or handle unauthorized error
+      // Clear auth state
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('user-email');
+      // Redirect to login
       window.location.href = '/';
     }
     return Promise.reject(error);

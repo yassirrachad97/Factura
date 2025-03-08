@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from './schema/user.schema';
+import { User, UserRole } from './schema/user.schema';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { RegisterDto } from './DTO/register.dto';
@@ -227,7 +227,32 @@ export class UsersService {
     return user;
   }
   
+
+  async getAllUsersHaveRoleUser(): Promise<User[]> {
+    return this.userModel.find({ role: 'user' }).exec();
+  }
+
+  async updateUserRole(email: string, role: string) {
+    const user = await this.findByEmailOrThrow(email);
+    
+    if (role !== UserRole.ADMIN && role !== UserRole.USER) {
+      throw new BadRequestException('Role invalide');
+    }
+    
+    user.role = role as UserRole;
+    
+    return user.save();
+  }
   
-  
-  
+  async getUserInfo(email: string) {
+    const user = await this.findByEmailOrThrow(email);
+    return {
+      firstname: user.firstname,
+      lastname: user.lastname,
+      username: user.username,
+      telephone: user.telephone,
+      email: user.email,
+      role: user.role
+    };
+  }
 }

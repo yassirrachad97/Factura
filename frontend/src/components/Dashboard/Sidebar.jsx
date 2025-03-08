@@ -55,12 +55,13 @@ export default function Sidebar({ activeItem }) {
   }));
 
   const managementItems = [
-    {
+    ...(role !== 'admin' ? [{
       id: "profile",
       icon: "👤",
       label: "Profile",
       description: "Gérer votre profil",
-    },
+      to: "/dashboard/profile"
+    }] : []),
     {
       id: "transactions",
       icon: "📝",
@@ -241,22 +242,41 @@ export default function Sidebar({ activeItem }) {
             </div>
           )}
           {managementItems.map((item) => (
-            <div
-              key={item.id}
-              onClick={item.onClick}
-              className={`flex items-center px-4 py-3 text-sm transition-colors duration-200 cursor-pointer
-                ${
-                  activeItem === item.id
-                    ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
-                    : "text-gray-300 hover:bg-gray-800"
-                } ${isCollapsed ? "justify-center" : ""}`}
-              title={item.description}
-            >
-              <span className={`${isCollapsed ? "text-xl" : "mr-3"}`}>
-                {item.icon}
-              </span>
-              {!isCollapsed && <span>{item.label}</span>}
-            </div>
+            item.to ? (
+              <Link
+                key={item.id}
+                to={item.to}
+                className={`flex items-center px-4 py-3 text-sm transition-colors duration-200
+                  ${
+                    activeItem === item.id
+                      ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
+                      : "text-gray-300 hover:bg-gray-800"
+                  } ${isCollapsed ? "justify-center" : ""}`}
+                title={item.description}
+              >
+                <span className={`${isCollapsed ? "text-xl" : "mr-3"}`}>
+                  {item.icon}
+                </span>
+                {!isCollapsed && <span>{item.label}</span>}
+              </Link>
+            ) : (
+              <div
+                key={item.id}
+                onClick={item.onClick}
+                className={`flex items-center px-4 py-3 text-sm transition-colors duration-200 cursor-pointer
+                  ${
+                    activeItem === item.id
+                      ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
+                      : "text-gray-300 hover:bg-gray-800"
+                  } ${isCollapsed ? "justify-center" : ""}`}
+                title={item.description}
+              >
+                <span className={`${isCollapsed ? "text-xl" : "mr-3"}`}>
+                  {item.icon}
+                </span>
+                {!isCollapsed && <span>{item.label}</span>}
+              </div>
+            )
           ))}
 
           {role === "admin" &&

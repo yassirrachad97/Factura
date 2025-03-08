@@ -1,8 +1,10 @@
-import { Controller, Post, Body, Get, Query,  Headers, Redirect } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query,  Headers, Redirect, Request, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RegisterDto } from './dto/register.dto';
 import { SendOtpDto } from './DTO/send-otp.dto';
 import { VerifyOtpDto } from './DTO/verify-otp.dto';
+import { AuthGuard } from '@nestjs/passport';
+import axiosInstance from './axiosInstance';
 
 
 @Controller('users')
@@ -48,5 +50,21 @@ export class UsersController {
   async resendOtp(@Body() body: SendOtpDto) {
     return this.usersService.resendOtp(body.email);
   }
+  @Get('getAllUsersHaveRoleUser')
+  async getAllUsersHaveRoleUser() {
+    return this.usersService.getAllUsersHaveRoleUser();
+  }
+
+  //updateUserRole
+  @Post('updateUserRole')
+  async updateUserRole(@Body() body: { email: string, role: string }) {
+    return this.usersService.updateUserRole(body.email, body.role);
   
+  }
+  
+  @Get('profile')
+  @UseGuards(AuthGuard('jwt'))
+  async getUserProfile(@Request() req) {
+    return this.usersService.getUserInfo(req.user.email);
+  }
 }
