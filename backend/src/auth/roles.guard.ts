@@ -20,6 +20,7 @@ export class RolesGuard implements CanActivate {
     }
 
     const hasRole = requiredRoles.some((role) => user.role === role);
+    console.log(hasRole);
     if (!hasRole) {
       throw new ForbiddenException(
         `Accès refusé : rôle ${user.role} non autorisé. Rôles requis : ${requiredRoles.join(', ')}`,

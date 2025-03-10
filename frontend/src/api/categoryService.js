@@ -1,18 +1,7 @@
 import axiosInstance from './axiosInstance';
 
-export const getAllCategories = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await axiosInstance.get('/categories', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
-};
+export const getAllCategories = () => 
+  axiosInstance.get('/categories').then(res => res.data);
 
 export const getCategory = async (identifier) => {
   try {
@@ -28,11 +17,11 @@ export const getCategory = async (identifier) => {
   }
 };
 
-export const createCategory = (data) => 
-  axiosInstance.post('/categories', data).then(res => res.data);
+export const createCategory = (categoryData) => 
+  axiosInstance.post('/categories', categoryData).then(res => res.data);
 
-export const updateCategory = (id, data) => 
-  axiosInstance.put(`/categories/${id}`, data).then(res => res.data);
+export const updateCategory = (id, categoryData) => 
+  axiosInstance.put(`/categories/${id}`, categoryData).then(res => res.data);
 
 export const deleteCategory = (id) => 
   axiosInstance.delete(`/categories/${id}`).then(res => res.data);

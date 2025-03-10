@@ -7,9 +7,11 @@ export class CreatefournisseurDTO {
 
   @IsNotEmpty()
   @IsString()
-  icon: string;
+  description: string;
 
   @IsNotEmpty()
   @IsString()
   categoryId: string;
+
+  logo: Express.Multer.File;
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -7,17 +7,17 @@ import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/schema/user.schema';
 
 @Controller('categories')
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
-//   @Post()
-//   @Roles(UserRole.ADMIN) 
-//   async create(@Body() createCategoryDto: CreateCategoryDto) {
-//     return this.categoryService.create(createCategoryDto);
-//   }
+  @Post()
+  @Roles(UserRole.ADMIN)
+  async create(@Body() createCategoryDto: CreateCategoryDto) {
+    return this.categoryService.create(createCategoryDto);
+  }
 
   @Get()
-  @UseGuards(AuthGuard('jwt'))
   async findAll() {
     return this.categoryService.findAll();
   }
@@ -34,15 +34,15 @@ export class CategoryController {
     return category;
   }
 
-//   @Put(':id')
-//   @Roles(UserRole.ADMIN) // Seuls les admins peuvent mettre à jour des catégories
-//   async update(@Param('id') id: string, @Body() updateCategoryDto: CreateCategoryDto) {
-//     return this.categoryService.update(id, updateCategoryDto);
-//   }
+  @Put(':id')
+  @Roles(UserRole.ADMIN)
+  async update(@Param('id') id: string, @Body() updateCategoryDto: CreateCategoryDto) {
+    return this.categoryService.update(id, updateCategoryDto);
+  }
 
-//   @Delete(':id')
-//   @Roles(UserRole.ADMIN) // Seuls les admins peuvent supprimer des catégories
-//   async delete(@Param('id') id: string) {
-//     return this.categoryService.delete(id);
-//   }
+  @Delete(':id')
+  @Roles(UserRole.ADMIN)
+  async delete(@Param('id') id: string) {
+    return this.categoryService.delete(id);
+  }
 }

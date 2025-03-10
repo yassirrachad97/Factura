@@ -138,186 +138,152 @@ export default function Sidebar({ activeItem }) {
   console.log(organizedItems);
 
   return (
-    <div
-      className={`transition-all duration-300 bg-[#1e1e2d] text-white flex-shrink-0 border-r border-gray-800 h-screen overflow-y-auto relative ${
-        isCollapsed ? "w-20" : "w-64"
-      }`}
-    >
-      <div className="flex items-center justify-between p-4 border-b border-gray-800">
-        <div className="flex items-center">
-          <img
-            src={riadLogo}
-            alt="RIAD Logo"
-            className={`transition-all duration-300 object-contain ${
-              isCollapsed ? "h-8 w-8" : "h-10 w-auto"
-            }`}
-          />
-          {!isCollapsed && (
-            <span className="font-bold text-xl ml-2">Factura</span>
-          )}
-        </div>
-        <button
-          onClick={toggleSidebar}
-          className="text-gray-400 hover:text-white transition-colors"
-        >
-          {isCollapsed ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                clipRule="evenodd"
-              />
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                clipRule="evenodd"
-              />
-            </svg>
-          )}
-        </button>
-      </div>
-
-      <div className="mt-4">
-        {organizedItems.map((group, groupIndex) => (
-          <div key={groupIndex} className="mb-4">
+    <div className={`bg-[#1a1a27] text-white h-screen relative ${isCollapsed ? 'w-20' : 'w-64'} transition-all duration-300`}>
+      <div className="flex flex-col h-full">
+        {/* Header with Logo and User Info */}
+        <div className="p-4 border-b border-gray-800">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <img src={riadLogo} alt="Riad Logo" className="h-8 w-auto" />
+              {!isCollapsed && <span className="ml-2 text-lg font-semibold">Factura</span>}
+            </div>
+            <button onClick={toggleSidebar} className="text-gray-400 hover:text-white">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isCollapsed ? "M13 5l7 7-7 7M5 5l7 7-7 7" : "M11 19l-7-7 7-7m8 14l-7-7 7-7"} />
+              </svg>
+            </button>
+          </div>
+          
+          {/* User Info Section */}
+          <div className="flex items-center mt-2">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center">
+              <span className="text-white text-lg font-medium">
+                {user?.username?.charAt(0).toUpperCase() || "U"}
+              </span>
+            </div>
             {!isCollapsed && (
-              <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                {group.title}
+              <div className="ml-3">
+                <p className="text-sm font-medium text-white">
+                  {user?.username || "Utilisateur"}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {role === "admin" ? "Administrateur" : "Compte Standard"}
+                </p>
               </div>
             )}
-            {group.menuItems.map((item) => (
-              <Link
-                key={item.id}
-                to={`/dashboard/${item.id}`}
-                className={`flex items-center px-4 py-3 text-sm transition-colors duration-200 
-            ${
-              activeItem === item.id
-                ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
-                : "text-gray-300 hover:bg-gray-800"
-            } ${isCollapsed ? "justify-center" : ""}`}
-                title={item.description}
-              >
-                <span className={`${isCollapsed ? "text-xl" : "mr-3"}`}>
-                  {item.icon}
-                </span>
-                {!isCollapsed && <span>{item.label}</span>}
-                {!isCollapsed && activeItem === item.id && (
-                  <span className="ml-auto">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                )}
-              </Link>
-            ))}
           </div>
-        ))}
+        </div>
 
-        <div className="mt-2 border-t border-gray-800 pt-4">
-          {!isCollapsed && (
-            <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              GESTION
-            </div>
-          )}
-          {managementItems.map((item) => (
-            item.to ? (
-              <Link
-                key={item.id}
-                to={item.to}
-                className={`flex items-center px-4 py-3 text-sm transition-colors duration-200
-                  ${
-                    activeItem === item.id
-                      ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
-                      : "text-gray-300 hover:bg-gray-800"
-                  } ${isCollapsed ? "justify-center" : ""}`}
-                title={item.description}
-              >
-                <span className={`${isCollapsed ? "text-xl" : "mr-3"}`}>
-                  {item.icon}
-                </span>
-                {!isCollapsed && <span>{item.label}</span>}
-              </Link>
-            ) : (
-              <div
-                key={item.id}
-                onClick={item.onClick}
-                className={`flex items-center px-4 py-3 text-sm transition-colors duration-200 cursor-pointer
-                  ${
-                    activeItem === item.id
-                      ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
-                      : "text-gray-300 hover:bg-gray-800"
-                  } ${isCollapsed ? "justify-center" : ""}`}
-                title={item.description}
-              >
-                <span className={`${isCollapsed ? "text-xl" : "mr-3"}`}>
-                  {item.icon}
-                </span>
-                {!isCollapsed && <span>{item.label}</span>}
-              </div>
-            )
-          ))}
-
-          {role === "admin" &&
-            adminItems.map((item) => (
-              <Link
-                key={item.id}
-                to={`/dashboard/${item.id}`}
-                className={`flex items-center px-4 py-3 text-sm transition-colors duration-200
+        {/* Rest of the sidebar content */}
+        <div className="flex-1 overflow-y-auto py-4">
+          {organizedItems.map((group, groupIndex) => (
+            <div key={groupIndex} className="mb-4">
+              {!isCollapsed && (
+                <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  {group.title}
+                </div>
+              )}
+              {group.menuItems.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/dashboard/${item.id}`}
+                  className={`flex items-center px-4 py-3 text-sm transition-colors duration-200 
                 ${
                   activeItem === item.id
                     ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
                     : "text-gray-300 hover:bg-gray-800"
                 } ${isCollapsed ? "justify-center" : ""}`}
-                title={item.description}
-              >
-                <span className={`${isCollapsed ? "text-xl" : "mr-3"}`}>
-                  {item.icon}
-                </span>
-                {!isCollapsed && <span>{item.label}</span>}
-              </Link>
-            ))}
-        </div>
-      </div>
-
-      <div className="absolute bottom-0 w-full border-t border-gray-800 p-4 bg-[#1a1a27]">
-        <div className="flex items-center">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center">
-            <span className="text-white text-sm font-medium">
-              {user?.username?.charAt(0).toUpperCase() || "U"}
-            </span>
-          </div>
-          {!isCollapsed && (
-            <div className="ml-3">
-              <p className="text-sm font-medium text-white">
-                {user?.username || "Utilisateur"}
-              </p>
-              <p className="text-xs text-gray-400">
-                {role === "admin" ? "Admin" : "Compte Standard"}
-              </p>
+                  title={item.description}
+                >
+                  <span className={`${isCollapsed ? "text-xl" : "mr-3"}`}>
+                    {item.icon}
+                  </span>
+                  {!isCollapsed && <span>{item.label}</span>}
+                  {!isCollapsed && activeItem === item.id && (
+                    <span className="ml-auto">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </span>
+                  )}
+                </Link>
+              ))}
             </div>
-          )}
+          ))}
+
+          <div className="mt-2 border-t border-gray-800 pt-4">
+            {!isCollapsed && (
+              <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                GESTION
+              </div>
+            )}
+            {managementItems.map((item) => (
+              item.to ? (
+                <Link
+                  key={item.id}
+                  to={item.to}
+                  className={`flex items-center px-4 py-3 text-sm transition-colors duration-200
+                    ${
+                      activeItem === item.id
+                        ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
+                        : "text-gray-300 hover:bg-gray-800"
+                    } ${isCollapsed ? "justify-center" : ""}`}
+                  title={item.description}
+                >
+                  <span className={`${isCollapsed ? "text-xl" : "mr-3"}`}>
+                    {item.icon}
+                  </span>
+                  {!isCollapsed && <span>{item.label}</span>}
+                </Link>
+              ) : (
+                <div
+                  key={item.id}
+                  onClick={item.onClick}
+                  className={`flex items-center px-4 py-3 text-sm transition-colors duration-200 cursor-pointer
+                    ${
+                      activeItem === item.id
+                        ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
+                        : "text-gray-300 hover:bg-gray-800"
+                    } ${isCollapsed ? "justify-center" : ""}`}
+                  title={item.description}
+                >
+                  <span className={`${isCollapsed ? "text-xl" : "mr-3"}`}>
+                    {item.icon}
+                  </span>
+                  {!isCollapsed && <span>{item.label}</span>}
+                </div>
+              )
+            ))}
+
+            {role === "admin" &&
+              adminItems.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/dashboard/${item.id}`}
+                  className={`flex items-center px-4 py-3 text-sm transition-colors duration-200
+                  ${
+                    activeItem === item.id
+                      ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
+                      : "text-gray-300 hover:bg-gray-800"
+                  } ${isCollapsed ? "justify-center" : ""}`}
+                  title={item.description}
+                >
+                  <span className={`${isCollapsed ? "text-xl" : "mr-3"}`}>
+                    {item.icon}
+                  </span>
+                  {!isCollapsed && <span>{item.label}</span>}
+                </Link>
+              ))}
+          </div>
         </div>
       </div>
     </div>

@@ -4,7 +4,7 @@ import { RegisterDto } from './dto/register.dto';
 import { SendOtpDto } from './DTO/send-otp.dto';
 import { VerifyOtpDto } from './DTO/verify-otp.dto';
 import { AuthGuard } from '@nestjs/passport';
-import axiosInstance from './axiosInstance';
+
 
 
 @Controller('users')
@@ -55,7 +55,7 @@ export class UsersController {
     return this.usersService.getAllUsersHaveRoleUser();
   }
 
-  //updateUserRole
+  
   @Post('updateUserRole')
   async updateUserRole(@Body() body: { email: string, role: string }) {
     return this.usersService.updateUserRole(body.email, body.role);

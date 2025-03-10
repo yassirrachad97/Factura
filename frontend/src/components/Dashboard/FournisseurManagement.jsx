@@ -1,8 +1,19 @@
 import { useEffect, useState } from "react";
-import { getAllFournisseurs } from "../../api/fournisseurService";
+import { getAllFournisseurs, createFournisseur, updateFournisseur, deleteFournisseur } from "../../api/fournisseurService";
+import { getAllCategories } from "../../api/categoryService";
 
 export default function FournisseurManagement() {
   const [fournisseurs, setFournisseurs] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentFournisseur, setCurrentFournisseur] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    logo: "",
+    category: ""
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -33,7 +44,24 @@ export default function FournisseurManagement() {
     fetchFournisseurs();
   }, [itemsPerPage]);
 
-  // Filtrer les fournisseurs lorsque searchTerm change
+  useEffect(() => {
+    fetchCategories();
+  }, [itemsPerPage]);
+
+  useEffect(() => {
+    console.log(formData);
+  }, [formData]);
+
+  const fetchCategories = async () => {
+    try {
+      const data = await getAllCategories();
+      setCategories(data);
+    } catch (err) {
+      console.error("Failed to fetch categories:", err);
+    }
+  };
+
+
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setFilteredFournisseurs(fournisseurs);
@@ -74,12 +102,238 @@ export default function FournisseurManagement() {
     setCurrentPage(1); 
   };
 
+// Essayez cette alternative
+// const handleInputChange = (e) => {
+//   const { name, value } = e.target;
+//   const newFormData = { ...formData };
+//   newFormData[name] = value;
+//   setFormData(newFormData);
+//   console.log(newFormData);
+// };
+ 
+
+  const handleSubmit = async (e, formData) => {
+    e.preventDefault();
+    try {
+      if (isEditing) {
+        await updateFournisseur(currentFournisseur._id, formData);
+      } else {
+        await createFournisseur(formData);
+      }
+      await fetchFournisseurs();
+      setShowModal(false);
+      resetForm();
+    } catch (err) {
+      setError("Échec de l'enregistrement du fournisseur");
+    }
+  };
+
+  const handleEdit = (fournisseur) => {
+    setCurrentFournisseur(fournisseur);
+    setFormData({
+      name: fournisseur.name,
+      description: fournisseur.description,
+      logo: fournisseur.logo,
+      category: fournisseur.category?._id || "",
+    });
+    setIsEditing(true);
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce fournisseur ?")) {
+      try {
+        await deleteFournisseur(id);
+        await fetchFournisseurs();
+      } catch (err) {
+        setError("Échec de la suppression du fournisseur");
+      }
+    }
+  };
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      description: "",
+      logo: "",
+      category: ""
+    });
+    setIsEditing(false);
+    setCurrentFournisseur(null);
+  };
+
+  const Modal = ({ showModal, setShowModal, handleSubmit, isEditing, currentFournisseur, categories }) => {
+    const [formData, setFormData] = useState({
+      name: '',
+      description: '',
+      category: '',
+      logo: null
+    });
+    const [previewImage, setPreviewImage] = useState('');
+
+    useEffect(() => {
+      if (currentFournisseur) {
+        setFormData({
+          name: currentFournisseur.name || '',
+          description: currentFournisseur.description || '',
+          category: currentFournisseur.category?._id || '',
+          logo: null
+        });
+        setPreviewImage(currentFournisseur.logo || '');
+      }
+    }, [currentFournisseur]);
+
+    const handleInputChange = (e) => {
+      const { name, value } = e.target;
+      setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleFileChange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        setFormData(prev => ({ ...prev, logo: file }));
+        setPreviewImage(URL.createObjectURL(file));
+      }
+    };
+
+    const onSubmit = (e) => {
+      e.preventDefault();
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('categoryId', formData.category);
+      if (formData.logo) {
+        formDataToSend.append('logo', formData.logo);
+      }
+    
+      console.log('Form data being sent:');
+      for (let pair of formDataToSend.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+      }
+      
+      handleSubmit(e, formDataToSend);
+    };
+
+    return (
+      <div className={`fixed inset-0 z-50 overflow-y-auto ${showModal ? '' : 'hidden'}`}>
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+          
+          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div className="absolute top-0 right-0 pt-4 pr-4">
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <span className="sr-only">Fermer</span>
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={onSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Logo</label>
+                <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
+                  <div className="text-center">
+                    {previewImage ? (
+                      <img src={previewImage} alt="Preview" className="mx-auto h-32 w-32 object-contain mb-4" />
+                    ) : (
+                      <svg className="mx-auto h-12 w-12 text-gray-300" viewBox="0 0 24 24" fill="currentColor">
+                        <path fillRule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                    <div className="mt-4 flex text-sm leading-6 text-gray-600">
+                      <label className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600">
+                        <span>Télécharger un fichier</span>
+                        <input type="file" className="sr-only" onChange={handleFileChange} accept="image/*" />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Nom</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Catégorie</label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  required
+                >
+                  <option value="">Sélectionnez une catégorie</option>
+                  {categories.map(category => (
+                    <option key={category._id} value={category._id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                >
+                  {isEditing ? 'Modifier' : 'Ajouter'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4">
-          <h2 className="text-xl font-bold">Gestion des Fournisseurs</h2>
-          <p className="text-blue-100">Gérez les fournisseurs disponibles dans le système</p>
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-bold">Gestion des Fournisseurs</h2>
+            <p className="text-blue-100">Gérez les fournisseurs disponibles dans le système</p>
+          </div>
+          <button
+            onClick={() => {
+              resetForm();
+              setShowModal(true);
+            }}
+            className="bg-white text-blue-600 px-4 py-2 rounded-md hover:bg-blue-50"
+          >
+            Ajouter un fournisseur
+          </button>
         </div>
 
         <div className="p-4 border-b border-gray-200">
@@ -197,7 +451,7 @@ export default function FournisseurManagement() {
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button 
                             className="text-blue-600 hover:text-blue-900 mr-3"
-                            onClick={() => alert(`Modifier le fournisseur: ${fournisseur.name}`)}
+                            onClick={() => handleEdit(fournisseur)}
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -205,7 +459,7 @@ export default function FournisseurManagement() {
                           </button>
                           <button 
                             className="text-red-600 hover:text-red-900"
-                            onClick={() => alert(`Supprimer le fournisseur: ${fournisseur.name}`)}
+                            onClick={() => handleDelete(fournisseur._id)}
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -296,6 +550,8 @@ export default function FournisseurManagement() {
           </>
         )}
       </div>
+
+      {showModal && <Modal showModal={showModal} setShowModal={setShowModal} handleSubmit={handleSubmit} isEditing={isEditing} currentFournisseur={currentFournisseur} categories={categories} />}
     </div>
   );
 }

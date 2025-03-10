@@ -23,6 +23,7 @@ export class FournisseursController {
 
   @Post()
   @Roles(UserRole.ADMIN) 
+  @UseGuards(RolesGuard)
   async create(@Body() createFournisseurDto: CreatefournisseurDTO) {
     return this.fournisseursService.create(createFournisseurDto);
   }
