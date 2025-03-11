@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getAllCategories } from "../../api/categoryService";
 import riadLogo from "../../assets/riad-logo.png";
 
-export default function Sidebar({ activeItem }) {
+export default function Sidebar({ activeItem, categoriesUpdated }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { user, role } = useSelector((state) => state.auth);
   const [isLoading, setIsLoading] = useState(true);
@@ -14,40 +14,51 @@ export default function Sidebar({ activeItem }) {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setIsLoading(true);
-        const data = await getAllCategories();
-        const formattedCategories = data.map((category) => ({
-          id: category._id,
-          slug: category.slug,
-          icon: category.icon,
-          name: category.name,
-          description: category.description,
-          group: category.group,
-          order: category.order,
-        }));
-        console.log("Categories récupérées:", formattedCategories);
-        setCategories(formattedCategories);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-        setError("Failed to load categories");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Fonction pour charger les catégories
+  const fetchCategories = async () => {
+    try {
+      setIsLoading(true);
+      const data = await getAllCategories();
+      const formattedCategories = data.map((category) => ({
+        id: category._id,
+        slug: category.slug,
+        icon: category.icon,
+        name: category.name,
+        description: category.description,
+        group: category.group,
+        order: category.order,
+      }));
+      console.log("Categories récupérées:", formattedCategories);
+      setCategories(formattedCategories);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setError("Failed to load categories");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  // Chargement initial des catégories
+  useEffect(() => {
     fetchCategories();
   }, []);
+
+  // Rechargement des catégories lorsque categoriesUpdated change
+  useEffect(() => {
+    if (categoriesUpdated) {
+      fetchCategories();
+    }
+  }, [categoriesUpdated]);
 
   const handleLogout = () => {
     dispatch(logout());
     navigate("/");
   };
 
+  // Create menu items using both slug and id for more robust matching
   const menuItems = categories.map((category) => ({
     id: category.slug || "",
+    categoryId: category.id,
     icon: category.icon || "📁",
     label: category.name || "",
     description: category.description || "",
@@ -110,12 +121,15 @@ export default function Sidebar({ activeItem }) {
     { title: "AUTRES SERVICES", items: ["transport", "achat", "services"] },
   ];
 
+  // Modified function to check both slug and group property
   const getItemsByCategory = () => {
     if (!menuItems || menuItems.length === 0) return [];
 
     return categoryGroups.map((group) => {
+      // Filter items either by id matching the items array OR by matching the group property
       const groupItems = menuItems.filter(
-        (item) => item.id && group.items.includes(item.id)
+        (item) => (item.id && group.items.includes(item.id)) || 
+                  (item.group && item.group.toUpperCase() === group.title)
       );
       return { ...group, menuItems: groupItems };
     });
@@ -183,40 +197,29 @@ export default function Sidebar({ activeItem }) {
                   {group.title}
                 </div>
               )}
-              {group.menuItems.map((item) => (
-                <Link
-                  key={item.id}
-                  to={`/dashboard/${item.id}`}
-                  className={`flex items-center px-4 py-3 text-sm transition-colors duration-200 
-                ${
-                  activeItem === item.id
-                    ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white"
-                    : "text-gray-300 hover:bg-gray-800"
-                } ${isCollapsed ? "justify-center" : ""}`}
-                  title={item.description}
-                >
-                  <span className={`${isCollapsed ? "text-xl" : "mr-3"}`}>
-                    {item.icon}
-                  </span>
-                  {!isCollapsed && <span>{item.label}</span>}
-                  {!isCollapsed && activeItem === item.id && (
-                    <span className="ml-auto">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </span>
-                  )}
-                </Link>
-              ))}
+              <div className="px-3 space-y-2">
+                {group.menuItems.map((item) => (
+                  <Link
+                    key={item.id}
+                    to={`/dashboard/${item.id}`}
+                    className={`block p-2 rounded-xl text-sm transition-all duration-200
+                      ${activeItem === item.id
+                        ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md"
+                        : "text-gray-300 hover:bg-gray-800"
+                      }`}
+                    title={item.description}
+                  >
+                    <div className={`${isCollapsed ? 'text-center' : 'flex items-center'}`}>
+                      <span className={`${isCollapsed ? "text-xl" : "text-xl mr-3"}`}>
+                        {item.icon}
+                      </span>
+                      {!isCollapsed && (
+                        <span className="truncate">{item.label}</span>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
           ))}
 

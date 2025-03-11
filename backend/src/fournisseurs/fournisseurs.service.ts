@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { fournisseur } from './schema/fournisseur.schema';
 import { CreatefournisseurDTO } from './DTO/create-fournisseur.dto';
 import { FileUploadService } from './file-upload.service';
+import { UpdatefournisseurDTO } from './DTO/update-fournisseur.dto';
 
 @Injectable()
 export class FournisseursService {
@@ -13,24 +14,29 @@ export class FournisseursService {
   ) {}
 
   async create(createFournisseurDto: CreatefournisseurDTO): Promise<fournisseur> {
-    const { name, description, categoryId, logo } = createFournisseurDto;
-
+    const { name, description, category, logo } = createFournisseurDto;
+  
+    console.log('Creating fournisseur with data:', { name, description, category, logo });
+  
     const existingFournisseur = await this.fournisseurModel.findOne({ name }).exec();
     if (existingFournisseur) {
       throw new BadRequestException('Un fournisseur avec ce nom existe déjà');
     }
-
-    const logoPath = await this.fileUploadService.saveFile(logo);
-
+  
     const newFournisseur = new this.fournisseurModel({
       name,
       description,
-      category: categoryId,
-      logo: logoPath,
+      category,
+      logo: logo || null,
     });
-
-    return newFournisseur.save();
+  
+    const savedFournisseur = await newFournisseur.save();
+    console.log('Fournisseur saved successfully:', savedFournisseur);
+  
+    return savedFournisseur;
   }
+  
+  
 
   async findAll(): Promise<fournisseur[]> {
     return this.fournisseurModel.find().populate('category').exec();
@@ -47,11 +53,13 @@ export class FournisseursService {
     return this.fournisseurModel.findById(id).populate('category').exec();
   }
 
-  async update(id: string, updateFournisseurDto: CreatefournisseurDTO): Promise<fournisseur> {
+  async update(id: string, updateFournisseurDto: UpdatefournisseurDTO): Promise<fournisseur> {
+    console.log("Données avant mise à jour:", updateFournisseurDto);
     return this.fournisseurModel
-      .findByIdAndUpdate(id, updateFournisseurDto, { new: true })
+    .findByIdAndUpdate(id, { $set: updateFournisseurDto }, { new: true })
       .exec();
   }
+  
 
   async delete(id: string): Promise<fournisseur> {
     return this.fournisseurModel.findByIdAndDelete(id).exec();

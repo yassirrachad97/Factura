@@ -38,7 +38,7 @@ export default function UserManagement() {
     fetchUsers();
   }, [itemsPerPage]);
 
-  // Appliquer la recherche/filtrage aux utilisateurs
+  
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setFilteredUsers(users);
@@ -51,16 +51,16 @@ export default function UserManagement() {
       );
       setFilteredUsers(filtered);
     }
-    setCurrentPage(1); // Revenir à la première page après un changement de filtre
+    setCurrentPage(1); 
     setTotalPages(Math.ceil(filteredUsers.length / itemsPerPage));
   }, [searchTerm, users]);
 
-  // Calculer les utilisateurs à afficher sur la page actuelle
+  
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
 
-  // Fonctions pour la navigation
+  
   const goToPage = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
@@ -76,22 +76,22 @@ export default function UserManagement() {
   const handleItemsPerPageChange = (e) => {
     const value = parseInt(e.target.value);
     setItemsPerPage(value);
-    setCurrentPage(1); // Revenir à la première page lors du changement d'éléments par page
+    setCurrentPage(1);
     setTotalPages(Math.ceil(filteredUsers.length / value));
   };
 
-  // Fonction pour changer le rôle de l'utilisateur
+
   const handleRoleChange = async (userEmail, newRole) => {
     try {
       setIsUpdating(true);
       await updateUserRole(userEmail, newRole);
       
-      // Mettre à jour l'état local après la mise à jour réussie
+      
       setUsers(prevUsers => prevUsers.map(user => 
         user.email === userEmail ? { ...user, role: newRole } : user
       ));
       
-      // Mettre à jour également les utilisateurs filtrés
+     
       setFilteredUsers(prevFiltered => prevFiltered.map(user => 
         user.email === userEmail ? { ...user, role: newRole } : user
       ));
@@ -112,7 +112,7 @@ export default function UserManagement() {
           <p className="text-blue-100">Gérez les utilisateurs enregistrés dans le système</p>
         </div>
 
-        {/* Barre de recherche */}
+    
         <div className="p-4 border-b border-gray-200">
           <div className="relative">
             <input
@@ -249,7 +249,7 @@ export default function UserManagement() {
               </table>
             </div>
 
-            {/* Contrôles de pagination */}
+          
             <div className="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
               <div className="flex-1 flex items-center justify-between">
                 <div>
@@ -291,7 +291,7 @@ export default function UserManagement() {
                       </svg>
                     </button>
                     
-                    {/* Boutons de pages */}
+                  
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                       <button
                         key={page}

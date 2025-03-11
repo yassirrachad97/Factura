@@ -1,9 +1,12 @@
-import { IsString } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 export class UpdatefournisseurDTO {
-    @IsString()
-    name?: string;
-  
-    @IsString()
-    icon?: string;
-  }
+  @IsOptional() @IsString()
+  name?: string;
+
+  @IsOptional() @IsString()
+  description?: string;
+
+  @IsOptional() @IsString()
+  category?: string;
+}

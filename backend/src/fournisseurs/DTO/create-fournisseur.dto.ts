@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreatefournisseurDTO {
   @IsNotEmpty()
@@ -11,7 +11,9 @@ export class CreatefournisseurDTO {
 
   @IsNotEmpty()
   @IsString()
-  categoryId: string;
+  category: string;
 
-  logo: Express.Multer.File;
+  @IsOptional() // Le logo peut être vide
+  @IsString() // Il contiendra le chemin du fichier
+  logo?: string;
 }
