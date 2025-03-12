@@ -1,4 +1,4 @@
-// C:\Users\Youcode\Desktop\Factura\frontend\src\components\Services\ServiceCard.jsx
+
 export default function ServiceCard({ service }) {
     const { id, logo, name, description } = service;
     
