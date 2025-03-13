@@ -37,8 +37,7 @@ export const createFournisseur = (formData) => {
 };
 
 export const updateFournisseur = (id, formData) => {
-  console.log("🔹 URL envoyée:", `/fournisseurs/${id}`);
-  console.log("🔹 ID envoyé:", id);
+  
 
   const token = localStorage.getItem("token");
 

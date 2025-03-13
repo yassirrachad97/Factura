@@ -1,9 +1,9 @@
-// C:\Users\Youcode\Desktop\Factura\frontend\src\components\Services\ServiceGrid.jsx
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
+import { generateUtilityFacture, generateRechargeFacture, markFactureAsPaid, downloadPDF } from '../../api/factureService';
 import ServiceCard from './ServiceCard';
 
-const RECHARGE_AMOUNTS = [100, 200, 300, 500, 1000]; // Predefined recharge amounts
+const RECHARGE_AMOUNTS = [100, 200, 300, 500, 1000];
 
 export default function ServiceGrid({ services, isLoading, searchTerm }) {
   const [selectedService, setSelectedService] = useState(null);
@@ -14,98 +14,88 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
   const [selectedAmount, setSelectedAmount] = useState(null);
 
   const handleServiceClick = (service) => {
+    console.log('Selected Service:', service); // Log the selected service
     setSelectedService(service);
     setContractNumber('');
     setSelectedAmount(null);
     setShowModal(true);
   };
 
-  // Check if service is rechargeable based on its group
   const isRechargeService = (service) => {
     return service?.group?.toUpperCase() === "AUTRES SERVICES";
   };
 
-  const generateUtilityFacture = () => {
-    const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-    const currentDate = new Date();
-    const randomAmount = Math.floor(Math.random() * (1000 - 100) + 100);
-    const randomMonth = months[Math.floor(Math.random() * months.length)];
-    
-    return {
-      type: 'utility',
-      factureNumber: 'FACT-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-      date: currentDate.toLocaleDateString(),
-      month: randomMonth,
-      amount: randomAmount.toFixed(2),
-      dueDate: new Date(currentDate.setDate(currentDate.getDate() + 30)).toLocaleDateString(),
-      details: [
-        { description: 'Consommation', amount: (randomAmount * 0.8).toFixed(2) },
-        { description: 'Taxes', amount: (randomAmount * 0.2).toFixed(2) }
-      ]
-    };
-  };
-
-  const generateRechargeFacture = (amount) => {
-    const currentDate = new Date();
-    
-    return {
-      type: 'recharge',
-      factureNumber: 'RECH-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-      date: currentDate.toLocaleDateString(),
-      amount: amount.toFixed(2),
-      details: [
-        { description: 'Montant de recharge', amount: amount.toFixed(2) },
-        { description: 'Frais de service', amount: '0.00' }
-      ]
-    };
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!contractNumber.trim()) {
       toast.error('Veuillez entrer un numéro de contrat');
       return;
     }
-
-    // Check service type and handle accordingly
-    if (isRechargeService(selectedService)) {
-      console.log("Recharge service detected:", selectedService.name);
-      setShowModal(false);
-      setShowFactureModal(true);
-    } else {
-      console.log("Utility service detected:", selectedService.name);
-      const newFacture = generateUtilityFacture();
+  
+    try {
+      let newFacture;
+      console.log('Sending request with:', {
+        service: selectedService,
+        contractNumber,
+        fournisseurId: selectedService.id, 
+      });
+  
+      if (isRechargeService(selectedService)) {
+        newFacture = await generateRechargeFacture(
+          selectedService,
+          contractNumber,
+          selectedService.id, 
+          selectedAmount
+        );
+      } else {
+        newFacture = await generateUtilityFacture(
+          selectedService,
+          contractNumber,
+          selectedService.id // 🔥 Vérifiez que ce champ passe bien
+        );
+      }
+  
       setFacture(newFacture);
       setShowModal(false);
       setShowFactureModal(true);
+    } catch (error) {
+      console.error(error.response?.data || error);
+      toast.error('Erreur lors de la génération de la facture');
     }
-    setContractNumber('');
   };
+  
 
   const handleAmountSelection = (amount) => {
     setSelectedAmount(amount);
-    const newFacture = generateRechargeFacture(amount);
-    setFacture(newFacture);
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (isRechargeService(selectedService) && !selectedAmount) {
       toast.error('Veuillez sélectionner un montant');
       return;
     }
-    
-    // Log payment details
-    console.log('Payment for service:', {
-      serviceName: selectedService?.name,
-      serviceGroup: selectedService?.group,
-      isRecharge: isRechargeService(selectedService),
-      amount: selectedAmount || facture?.amount,
-      contractNumber: contractNumber
-    });
 
-    toast.success('Paiement effectué avec succès');
-    setShowFactureModal(false);
-    setSelectedAmount(null);
+    try {
+      // Marquer la facture comme payée
+      await markFactureAsPaid(facture.id);
+      toast.success('Paiement effectué avec succès');
+      setShowFactureModal(false);
+      setSelectedAmount(null);
+    } catch (error) {
+      toast.error('Erreur lors du paiement de la facture');
+      console.error(error);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    try {
+      // Télécharger la facture en PDF
+      await downloadPDF(facture, selectedService.fournisseur, user); // Assurez-vous d'avoir les données du fournisseur et de l'utilisateur
+      toast.success('Facture téléchargée avec succès!');
+    } catch (error) {
+      toast.error('Erreur lors du téléchargement de la facture');
+      console.error(error);
+    }
   };
 
   if (isLoading) {
@@ -123,69 +113,20 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
       </div>
     );
   }
+  
 
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {services.map((service) => (
-          <div
-            key={service.id}
-            onClick={() => handleServiceClick(service)}
-            className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 
-                     transform hover:-translate-y-1 cursor-pointer border border-gray-100 hover:border-blue-200"
-          >
-            <div className="p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-                  {service.logo ? (
-                    <img
-                      src={service.logo}
-                      alt={service.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-2xl">🏢</span>
-                  )}
-                </div>
-                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 text-blue-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </div>
-              </div>
+      {services?.map((service) => (
+  <div key={service?.id} onClick={() => handleServiceClick(service)} className="cursor-pointer">
+    <ServiceCard service={service} />
+  </div>
+))}
 
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                  {service.name}
-                </h3>
-                <p className="text-gray-600 text-sm line-clamp-2">
-                  {service.description || "Aucune description disponible"}
-                </p>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <button
-                  className="w-full text-center text-blue-600 hover:text-blue-700 font-medium text-sm"
-                >
-                  Entrer le numéro de contrat
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
       </div>
 
-      {/* Contract Number Modal */}
+   
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
@@ -227,7 +168,6 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
         </div>
       )}
 
-      {/* Facture Modal */}
       {showFactureModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 w-full max-w-2xl mx-4">
@@ -311,16 +251,16 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
                 </div>
 
                 <div className="border-t border-b py-4">
-                  {facture.details.map((detail, index) => (
+                  {facture?.details?.map((detail, index) => (
                     <div key={index} className="flex justify-between mb-2">
-                      <span className="text-gray-600">{detail.description}</span>
-                      <span className="font-medium">{detail.amount} MAD</span>
+                      <span className="text-gray-600">{detail?.description}</span>
+                      <span className="font-medium">{detail?.amount} MAD</span>
                     </div>
                   ))}
                   <div className="flex justify-between mt-4 pt-4 border-t">
                     <span className="text-lg font-semibold">Total à payer</span>
                     <span className="text-lg font-bold text-blue-600">
-                      {facture.amount} MAD
+                      {facture?.amount} MAD
                     </span>
                   </div>
                 </div>
@@ -328,6 +268,12 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
             )}
 
             <div className="flex justify-end space-x-4">
+              <button
+                onClick={handleDownloadPDF}
+                className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Télécharger PDF
+              </button>
               <button
                 onClick={() => {
                   setShowFactureModal(false);

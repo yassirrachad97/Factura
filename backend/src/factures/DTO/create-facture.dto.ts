@@ -12,4 +12,16 @@ export class CreateFactureDTO {
   @IsNotEmpty()
   @IsDateString()
   dueDate: string;
+
+  @IsNotEmpty()
+  @IsString()
+  contractNumber: string;
+
+  @IsNotEmpty()
+  @IsString()
+  serviceType: string;
+
+  @IsNotEmpty()
+  @IsString()
+  serviceName: string;
 }
