@@ -39,7 +39,7 @@ export class UsersController {
   }
   @Post('ResetPassword')
   async ResetPassword(@Body() body: SendOtpDto) {
-    console.log(body);
+  
     return this.usersService.resetPassword(body.email, body.newPassword);
   }
   @Post('ChangePassword')

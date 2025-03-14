@@ -2,8 +2,10 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { CategorySeedService } from './seed/category.seed';
 import { FournisseurSeedService } from './seed/fournisseur.seed';
+import * as dotenv from 'dotenv';
 
 async function bootstrap() {
+  dotenv.config();
   const app = await NestFactory.create(AppModule);
 
   const seedService = app.get(CategorySeedService);
@@ -18,6 +20,7 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true, 
   });
+  
 
   await app.listen(3000);
 }

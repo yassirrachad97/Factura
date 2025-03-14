@@ -11,11 +11,14 @@ import { PaiementModule } from './paiement/paiement.module';
 import { HistoriqueModule } from './historique/historique.module';
 import { CategoryModule } from './category/category.module';
 import { SeedModule } from './seed/seed.module';
+import configuration from './config/configuration';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
+      load: [configuration],
     }),
     MongooseModule.forRoot(process.env.DATABASE_URL),
 

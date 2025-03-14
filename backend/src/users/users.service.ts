@@ -14,37 +14,37 @@ export class UsersService {
   
   async register(dto: RegisterDto): Promise<User> {
     try {
-      console.log('➡️ Tentative d\'inscription avec les données:', dto);
+   
   
       const existingUser = await this.findByEmail(dto.email);
       if (existingUser) {
-        console.error('❌ Erreur : Email déjà utilisé:', dto.email);
+      
         throw new BadRequestException('Cet email est déjà utilisé');
       }
   
       const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
       dto.password = await bcrypt.hash(dto.password, saltRounds);
-      console.log('🔒 Mot de passe haché');
+  
   
       const user = new this.userModel({
         ...dto,
         isVerified: false,
       });
   
-      console.log('✅ Utilisateur créé :', user);
+    
   
       await user.save();
-      console.log('📂 Utilisateur sauvegardé');
+    
   
       const token = await this.generateVerificationToken(dto.email);
-      console.log('🔑 Token de vérification:', token);
+  
   
       await this.sendVerificationEmail(dto.email, token);
-      console.log('📨 Email envoyé à:', dto.email);
+   
   
       return user;
     } catch (error) {
-      console.error('❌ Erreur lors de l\'inscription:', error);
+     
       throw new BadRequestException('Erreur lors de l\'inscription: ' + error.message);
     }
   }
@@ -87,7 +87,7 @@ export class UsersService {
   
     await user.save();
   
-    console.log(`OTP généré pour ${email} : ${otp}`);
+ 
     return otp;
   }
 
@@ -180,7 +180,7 @@ export class UsersService {
       await user.save();
       return 'Mot de passe réinitialisé avec succès';
     } catch (error) {
-      console.log(error)
+
       throw new BadRequestException('Erreur lors de la réinitialisation du mot de passe');
     }	
   }

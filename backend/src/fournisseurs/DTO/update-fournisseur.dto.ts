@@ -9,4 +9,6 @@ export class UpdatefournisseurDTO {
 
   @IsOptional() @IsString()
   category?: string;
+  @IsOptional() @IsString()
+  logo?: string;
 }

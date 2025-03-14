@@ -1,3 +1,4 @@
+
 import {
   Controller,
   Get,
@@ -9,7 +10,8 @@ import {
   UseGuards,
   Query,
   UseInterceptors,
-  UploadedFile
+  UploadedFile,
+  BadRequestException
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FournisseursService } from './fournisseurs.service';
@@ -18,35 +20,45 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/schema/user.schema';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { UpdatefournisseurDTO } from './DTO/update-fournisseur.dto';
+import { S3Service } from '../s3/s3.service';
 
 @Controller('fournisseurs')
 @UseGuards(AuthGuard('jwt'), RolesGuard) 
 export class FournisseursController {
-  constructor(private readonly fournisseursService: FournisseursService) {}
+  constructor(
+    private readonly fournisseursService: FournisseursService,
+    private readonly s3Service: S3Service
+  ) {}
 
   @Post()
   @Roles(UserRole.ADMIN)
   @UseInterceptors(FileInterceptor('logo', {
-    storage: diskStorage({
-      destination: './uploads/',
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        callback(null, uniqueSuffix + extname(file.originalname)); 
-      },
-    }),
+    limits: {
+      fileSize: 5 * 1024 * 1024, 
+    },
+    fileFilter: (req, file, callback) => {
+      if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+        return callback(new BadRequestException('Only image files are allowed!'), false);
+      }
+      callback(null, true);
+    },
   }))
   async create(
     @UploadedFile() file: Express.Multer.File,
     @Body() createFournisseurDto: CreatefournisseurDTO
   ) {
-    console.log('Données reçues:', createFournisseurDto);
-    console.log('Fichier reçu:', file);
+    
   
     if (file) {
-      createFournisseurDto.logo = `/uploads/${file.filename}`; 
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const fileKey = `fournisseurs/${uniqueSuffix}-${file.originalname}`;
+      
+   
+      const fileUrl = await this.s3Service.uploadFile(file, fileKey);
+      
+      
+      createFournisseurDto.logo = fileUrl;
     } else {
       createFournisseurDto.logo = null; 
     }
@@ -65,34 +77,48 @@ export class FournisseursController {
 
   @Get(':id')
   @UseGuards(AuthGuard('jwt'))
-  
   async findOne(@Param('id') id: string) {
     return this.fournisseursService.findOne(id);
   }
 
   @Put(':id')
   @Roles(UserRole.ADMIN) 
-  @UseInterceptors(FileInterceptor('logo'))
+  @UseInterceptors(FileInterceptor('logo', {
+    limits: {
+      fileSize: 5 * 1024 * 1024, 
+    },
+    fileFilter: (req, file, callback) => {
+      if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+        return callback(new BadRequestException('Only image files are allowed!'), false);
+      }
+      callback(null, true);
+    },
+  }))
   @UseGuards(AuthGuard('jwt'))
   async update(
     @Param('id') id: string,
-    @Body() updateFournisseurDto: any,  // Contient les autres champs comme name, description, category
-    @UploadedFile() logo: Express.Multer.File,  // Logo si envoyé
+    @Body() updateFournisseurDto: UpdatefournisseurDTO,
+    @UploadedFile() file: Express.Multer.File,
   ) {
-
     if (!id) {
-      throw new Error("ID manquant dans l'URL");
+      throw new BadRequestException("ID manquant dans l'URL");
     }
-    // Si un logo est envoyé, ajouter ou remplacer le logo dans le DTO
-    if (logo) {
-      updateFournisseurDto.logo = logo.filename;  // Garde juste le nom du fichier ou le path du logo
-    }
+    
+  
+    if (file) {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const fileKey = `fournisseurs/${uniqueSuffix}-${file.originalname}`;
+      
 
-    // Mettre à jour le fournisseur dans la base de données
-    return this.fournisseursService.update(id, updateFournisseurDto);  // Appel au service pour mettre à jour
-  }
+      const fileUrl = await this.s3Service.uploadFile(file, fileKey);
+      
+   
+      updateFournisseurDto.logo = fileUrl;
+    }
 
   
+    return this.fournisseursService.update(id, updateFournisseurDto);
+  }
 
   @Delete(':id')
   @Roles(UserRole.ADMIN)
