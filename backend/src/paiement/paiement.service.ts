@@ -1,49 +1,149 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+// paiement/paiement.service.ts
+
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import Stripe from 'stripe';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Payment } from './schema/paiement.schema';
 import { factures } from '../factures/schema/facture.schema';
 import { User } from '../users/schema/user.schema';
 
 @Injectable()
 export class PaiementService {
+  private stripe: Stripe;
+
   constructor(
-    @InjectModel(Payment.name) private paymentModel: Model<Payment>,
-    @InjectModel(factures.name) private invoiceModel: Model<factures>,
+    private configService: ConfigService,
+    @InjectModel(factures.name) private factureModel: Model<factures>,
     @InjectModel(User.name) private userModel: Model<User>,
-  ) {}
-
-  async payInvoice(userId: string, invoiceId: string): Promise<Payment> {
-    const invoice = await this.invoiceModel.findById(invoiceId).exec();
-    if (!invoice || invoice.userId.toString() !== userId) {
-      throw new NotFoundException('Invoice not found');
-    }
-
-    const user = await this.userModel.findById(userId).exec();
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    // Vérifier si l'utilisateur a suffisamment de fonds
-    // if (user.balance < invoice.amount) {
-    //   throw new BadRequestException('Insufficient funds');
-    // }
-
-    // Mettre à jour le solde de l'utilisateur
-    // user.balance -= invoice.amount;
-    await user.save();
-
-   
-    invoice.isPaid = true;
-    await invoice.save();
-
-   
-    const payment = new this.paymentModel({
-      userId,
-      invoiceId,
-      amount: invoice.amount,
+  ) {
+    this.stripe = new Stripe(this.configService.get<string>('STRIPE_SECRET_KEY'), {
+      // apiVersion: '2023-10-16',
     });
+  }
 
-    return payment.save();
+  async createPaymentIntent(factureId: string, userId: string) {
+    try {
+      // Trouver la facture
+      const facture = await this.factureModel.findById(factureId).exec();
+      if (!facture) {
+        throw new BadRequestException('Facture non trouvée');
+      }
+
+      if (facture.isPaid) {
+        throw new BadRequestException('Cette facture a déjà été payée');
+      }
+
+      // Trouver l'utilisateur
+      const user = await this.userModel.findById(userId).exec();
+      if (!user) {
+        throw new BadRequestException('Utilisateur non trouvé');
+      }
+
+      // Créer un client Stripe si l'utilisateur n'en a pas déjà un
+      if (!user.stripeCustomerId) {
+        const customer = await this.stripe.customers.create({
+          email: user.email,
+          name: `${user.firstname} ${user.lastname}`,
+          phone: user.telephone || undefined,
+        });
+
+        user.stripeCustomerId = customer.id;
+        await user.save();
+      }
+
+      // Créer un intent de paiement avec Stripe
+      const amount = Math.round(facture.amount * 100); // Convertir en centimes
+      const paymentIntent = await this.stripe.paymentIntents.create({
+        amount,
+        currency: 'mad', // Dirham marocain
+        customer: user.stripeCustomerId,
+        metadata: {
+          factureId: facture.id,
+          contractNumber: facture.contractNumber,
+        
+          userId: userId,
+        },
+      });
+
+      return {
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+        amount: facture.amount,
+      };
+    } catch (error) {
+      console.error('Erreur lors de la création du paiement:', error);
+      throw new BadRequestException(
+        error.message || 'Erreur lors de la création du paiement',
+      );
+    }
+  }
+
+  async confirmPayment(paymentIntentId: string) {
+    try {
+      const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      if (paymentIntent.status === 'succeeded') {
+        const factureId = paymentIntent.metadata.factureId;
+        
+        // Mettre à jour la facture comme payée
+        const facture = await this.factureModel.findByIdAndUpdate(
+          factureId,
+          { 
+            isPaid: true, 
+            paidAt: new Date(),
+            paymentIntentId: paymentIntentId
+          },
+          { new: true }
+        ).exec();
+
+        return { success: true, facture };
+      }
+      
+      return { success: false, status: paymentIntent.status };
+    } catch (error) {
+      console.error('Erreur lors de la confirmation du paiement:', error);
+      throw new BadRequestException(
+        error.message || 'Erreur lors de la confirmation du paiement',
+      );
+    }
+  }
+
+  async getPaymentStatus(paymentIntentId: string) {
+    try {
+      const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
+      return {
+        status: paymentIntent.status,
+        factureId: paymentIntent.metadata.factureId,
+      };
+    } catch (error) {
+      console.error('Erreur lors de la récupération du statut du paiement:', error);
+      throw new BadRequestException(
+        error.message || 'Erreur lors de la récupération du statut du paiement',
+      );
+    }
+  }
+
+  async handleWebhook(signature: string, payload: Buffer) {
+    try {
+      const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
+      const event = this.stripe.webhooks.constructEvent(
+        payload,
+        signature,
+        webhookSecret,
+      );
+
+      if (event.type === 'payment_intent.succeeded') {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        await this.confirmPayment(paymentIntent.id);
+      }
+
+      return { received: true };
+    } catch (error) {
+      console.error('Erreur lors du traitement du webhook:', error);
+      throw new BadRequestException(
+        error.message || 'Erreur lors du traitement du webhook',
+      );
+    }
   }
 }

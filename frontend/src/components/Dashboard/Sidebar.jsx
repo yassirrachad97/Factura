@@ -106,6 +106,12 @@ export default function Sidebar({ activeItem, categoriesUpdated }) {
       icon: "🗂️",
       label: "Catégories",
       description: "Gérer les catégories",
+    },
+    {
+      id: "statistiques",
+      icon: "📄",
+      label: "statistiques",
+      description: "voir les statistiques",
     }
   ];
 
@@ -121,7 +127,7 @@ export default function Sidebar({ activeItem, categoriesUpdated }) {
     { title: "AUTRES SERVICES", items: ["transport", "achat", "services"] },
   ];
 
-  // Modified function to check both slug and group property
+
   const getItemsByCategory = () => {
     if (!menuItems || menuItems.length === 0) return [];
 

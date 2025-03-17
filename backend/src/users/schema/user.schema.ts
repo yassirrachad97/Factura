@@ -55,6 +55,9 @@ export class User extends Document {
 
   @Prop({ enum: UserRole, default: UserRole.USER })  
   role: UserRole;  
+
+  @Prop()
+  stripeCustomerId: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

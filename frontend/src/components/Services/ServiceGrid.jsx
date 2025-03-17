@@ -14,7 +14,7 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
   const [selectedAmount, setSelectedAmount] = useState(null);
 
   const handleServiceClick = (service) => {
-    console.log('Selected Service:', service); // Log the selected service
+    console.log('Selected Service:', service); 
     setSelectedService(service);
     setContractNumber('');
     setSelectedAmount(null);
@@ -34,6 +34,8 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
   
     try {
       let newFacture;
+      console.log('Facture générée:', newFacture);
+
       console.log('Sending request with:', {
         service: selectedService,
         contractNumber,
@@ -51,7 +53,7 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
         newFacture = await generateUtilityFacture(
           selectedService,
           contractNumber,
-          selectedService.id // 🔥 Vérifiez que ce champ passe bien
+          selectedService.id 
         );
       }
   
@@ -70,13 +72,13 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
   };
 
   const handlePayment = async () => {
-    if (isRechargeService(selectedService) && !selectedAmount) {
-      toast.error('Veuillez sélectionner un montant');
+    if (!facture || !facture.id) {
+      toast.error('Erreur : ID de la facture introuvable');
+      console.error('Facture invalide:', facture);
       return;
     }
-
+  
     try {
-      // Marquer la facture comme payée
       await markFactureAsPaid(facture.id);
       toast.success('Paiement effectué avec succès');
       setShowFactureModal(false);
@@ -86,11 +88,12 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
       console.error(error);
     }
   };
+  
 
   const handleDownloadPDF = async () => {
     try {
-      // Télécharger la facture en PDF
-      await downloadPDF(facture, selectedService.fournisseur, user); // Assurez-vous d'avoir les données du fournisseur et de l'utilisateur
+
+      await downloadPDF(facture, selectedService.fournisseur, user); 
       toast.success('Facture téléchargée avec succès!');
     } catch (error) {
       toast.error('Erreur lors du téléchargement de la facture');
@@ -176,12 +179,12 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
                 {isRechargeService(selectedService) ? 'Recharge' : 'Facture'}
               </h2>
               <p className="text-gray-600">
-                {facture ? `N° ${facture.factureNumber}` : 'Sélectionnez un montant'}
+                {facture ? `N° ${contractNumber}` : 'Sélectionnez un montant'}
               </p>
             </div>
 
             {isRechargeService(selectedService) ? (
-              // Recharge service layout
+             
               <div>
                 <div className="mb-6">
                   <h3 className="text-lg font-medium text-gray-800 mb-4">
@@ -227,7 +230,7 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
                 )}
               </div>
             ) : (
-              // Utility bill layout
+             
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Service</span>
@@ -237,13 +240,10 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
                   <span className="text-gray-600">Numéro de contrat</span>
                   <span className="font-medium">{contractNumber}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Période</span>
-                  <span className="font-medium">{facture.month}</span>
-                </div>
+               
                 <div className="flex justify-between">
                   <span className="text-gray-600">Date d'émission</span>
-                  <span className="font-medium">{facture.date}</span>
+                  <span className="font-medium">{facture.createdAt}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Date limite de paiement</span>

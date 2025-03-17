@@ -22,7 +22,7 @@ export class AuthService {
     const isNewDevice = !user.devices?.some((device) => 
       device.deviceName === deviceId && device.iscourrant === true
     );
-    console.log(isNewDevice)
+   
   
     if (isNewDevice) {
       const otp = await this.usersService.generateOTP(body.email);

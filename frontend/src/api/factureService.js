@@ -3,6 +3,13 @@ import axiosInstance from './axiosInstance';
 import { toast } from 'react-toastify';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import { loadStripe } from '@stripe/stripe-js';
+
+
+
+const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+
+
 
 /**
  * Génère une facture pour un service standard (utilitaire)
@@ -24,6 +31,8 @@ export const generateUtilityFacture = async (serviceData, contractNumber, fourni
         serviceType: 'utility',
         serviceName: serviceData.name,
       });
+
+      console.log('Réponse API (Facture générée) :', response.data);
   
       toast.success('Facture générée avec succès!');
       return response.data;

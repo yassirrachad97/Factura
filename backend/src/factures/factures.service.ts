@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { factures } from './schema/facture.schema';
 import { User } from '../users/schema/user.schema';
 import { fournisseur } from '../fournisseurs/schema/fournisseur.schema';
@@ -31,20 +31,40 @@ async generateInvoice(userId: string, createFactureDTO: CreateFactureDTO) {
 
   const contractNumber = `CONTRACT-${Date.now()}`;
   console.log('Generated contract number:', contractNumber);
-  const invoice = new this.FactureModel({
+  const invoicePreview = {
     userId,
     fournisseurId,
+    provider, 
     amount,
     dueDate: new Date(dueDate),
     contractNumber,
     isPaid: false,
     createdBy: userId,
+    createdAt: new Date(),
+    _id: new Types.ObjectId(), 
+  };
+  console.log('Generated invoice preview:', invoicePreview);
+  return invoicePreview;
+}
+  
+
+async saveInvoiceAfterPayment(invoiceData: any) {
+  console.log('Saving invoice after payment:', invoiceData);
+  
+
+  const invoice = new this.FactureModel({
+    userId: invoiceData.userId,
+    fournisseurId: invoiceData.fournisseurId,
+    amount: invoiceData.amount,
+    dueDate: invoiceData.dueDate,
+    contractNumber: invoiceData.contractNumber,
+    isPaid: true, 
+    createdBy: invoiceData.userId,
+  
   });
-  console.log('Saving invoice:', invoice);
+  
   return invoice.save();
 }
-
-  
 
   
   async getUserInvoices(userId: string): Promise<factures[]> {
