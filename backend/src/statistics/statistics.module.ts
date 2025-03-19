@@ -1,4 +1,3 @@
-// src/statistics/statistics.module.ts
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { StatisticsController } from './statistics.controller';

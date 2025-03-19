@@ -1,4 +1,3 @@
-// src/statistics/statistics.controller.ts
 import { Controller, Get } from '@nestjs/common';
 import { StatisticsService } from './statistics.service';
 
@@ -8,6 +7,13 @@ export class StatisticsController {
 
   @Get()
   async getStatistics() {
-    return await this.statisticsService.calculateStatistics();
+    try {
+      // Calculer les statistiques
+      return await this.statisticsService.calculateStatistics();
+    } catch (error) {
+      console.error("Error while fetching statistics:", error);
+      throw error; 
+    }
   }
 }
+

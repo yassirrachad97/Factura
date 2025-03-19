@@ -7,7 +7,7 @@ export default function ProtectedRoute({ requireAdmin }) {
 
   
   const isAdminRoute = location.pathname.includes('/dashboard/') && 
-    ['users', 'categories', 'fournisseurs', 'statistique'].some(path => 
+    ['users', 'categories', 'fournisseurs', 'statistiques'].some(path => 
       location.pathname.includes(path)
     );
 

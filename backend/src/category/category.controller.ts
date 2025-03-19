@@ -22,9 +22,15 @@ export class CategoryController {
     return this.categoryService.findAll();
   }
 
+  
+
   @Get(':identifier')
   @UseGuards(AuthGuard('jwt'))
   async findOne(@Param('identifier') identifier: string) {
+    // if (identifier === 'statistiques') {
+    //   // Rediriger vers le contrôleur de statistiques ou traiter autrement
+    //   return { message: 'Cette route est réservée aux statistiques' };
+    // }
     // Try to find by slug first
     let category = await this.categoryService.findBySlug(identifier);
     if (!category) {

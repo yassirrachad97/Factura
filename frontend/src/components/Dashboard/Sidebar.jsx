@@ -94,25 +94,29 @@ export default function Sidebar({ activeItem, categoriesUpdated }) {
       icon: "👥",
       label: "Utilisateurs",
       description: "Gérer les utilisateurs",
+      to: "/dashboard/users", // Utilisez une route dédiée
     },
     {
       id: "fournisseurs",
       icon: "🏭",
       label: "Fournisseurs",
       description: "Gérer les fournisseurs",
+      to: "/dashboard/fournisseurs", // Utilisez une route dédiée
     },
     {
       id: "categories",
       icon: "🗂️",
       label: "Catégories",
       description: "Gérer les catégories",
+      to: "/dashboard/categories", // Utilisez une route dédiée
     },
     {
       id: "statistiques",
       icon: "📄",
-      label: "statistiques",
-      description: "voir les statistiques",
-    }
+      label: "Statistiques",
+      description: "Voir les statistiques",
+      to: "/dashboard/statistiques", // Utilisez une route dédiée
+    },
   ];
 
   const categoryGroups = [

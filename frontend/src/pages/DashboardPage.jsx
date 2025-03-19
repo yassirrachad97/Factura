@@ -10,6 +10,7 @@ import { getFournisseursByCategory } from "../api/fournisseurService";
 import { useSelector } from "react-redux"; 
 import UserManagement from "../components/Dashboard/UserManagement";
 import Profile from "../components/Dashboard/Profile";
+import Statistique from "../components/Dashboard/statistique";
 
 export default function DashboardPage() {
   const { categoryId = "opar" } = useParams();
@@ -24,7 +25,7 @@ export default function DashboardPage() {
   const [filteredServices, setFilteredServices] = useState([]);
 
   // Admin specific section handlers
-  const isAdminSection = role === "admin" && ["categories", "fournisseurs", "users", "statistique"].includes(categoryId);
+  const isAdminSection = role === "admin" && ["categories", "fournisseurs", "users", "statistiques"].includes(categoryId);
   const isProfileSection = categoryId === "profile" && role !== "admin";
  
   useEffect(() => {
@@ -111,8 +112,9 @@ export default function DashboardPage() {
           return <FournisseurManagement/>;
         case "users":
           return <UserManagement/>;
-        case "statistique":
-          return <div>Statistiques</div>;
+        case "statistiques":
+          return <Statistique/>;
+          
       }
     } else if (isProfileSection) {
       return <Profile />;

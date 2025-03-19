@@ -4,7 +4,6 @@ const axiosInstance = axios.create({
   baseURL: 'http://localhost:3000/api'
 });
 
-// Add a request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -18,17 +17,17 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Add a response interceptor to handle unauthorized errors
+
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear auth state
+    
       localStorage.removeItem('user');
       localStorage.removeItem('token');
       localStorage.removeItem('role');
       localStorage.removeItem('user-email');
-      // Redirect to login
+
       window.location.href = '/';
     }
     return Promise.reject(error);
