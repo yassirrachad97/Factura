@@ -68,9 +68,11 @@ async saveInvoiceAfterPayment(invoiceData: any) {
 
   
   async getUserInvoices(userId: string): Promise<factures[]> {
+    console.log('Fetching invoices for user:', userId);
     return this.FactureModel.find({ userId })
       .populate('fournisseurId', 'name')
       .exec();
+      
   }
   
   async getInvoiceById(id: string): Promise<factures> {

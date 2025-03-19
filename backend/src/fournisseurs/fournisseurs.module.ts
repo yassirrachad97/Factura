@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { MulterModule } from '@nestjs/platform-express';
 import { FournisseursController } from './fournisseurs.controller';
 import { FournisseursService } from './fournisseurs.service';
 import { fournisseur, fournisseurSchema } from './schema/fournisseur.schema';
@@ -9,11 +8,7 @@ import { S3Service } from 'src/s3/s3.service';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: fournisseur.name, schema: fournisseurSchema }]),
-    // MulterModule.registerAsync({
-    //   useFactory: () => ({
-    //     dest: './uploads',
-    //   }),
-    // }),
+   
   ],
   controllers: [FournisseursController],
   providers: [FournisseursService, S3Service],

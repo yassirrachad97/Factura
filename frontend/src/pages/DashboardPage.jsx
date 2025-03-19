@@ -11,6 +11,7 @@ import { useSelector } from "react-redux";
 import UserManagement from "../components/Dashboard/UserManagement";
 import Profile from "../components/Dashboard/Profile";
 import Statistique from "../components/Dashboard/statistique";
+import PaidInvoices from '../components/Dashboard/transactions';
 
 export default function DashboardPage() {
   const { categoryId = "opar" } = useParams();
@@ -26,6 +27,7 @@ export default function DashboardPage() {
 
   // Admin specific section handlers
   const isAdminSection = role === "admin" && ["categories", "fournisseurs", "users", "statistiques"].includes(categoryId);
+  const isTransactionsSection = categoryId === "transactions";
   const isProfileSection = categoryId === "profile" && role !== "admin";
  
   useEffect(() => {
@@ -50,7 +52,7 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (isAdminSection || isProfileSection) return;
+    if (isAdminSection || isProfileSection || isTransactionsSection) return;
 
     const loadCategoryAndServices = async () => {
       setIsLoading(true);
@@ -82,7 +84,7 @@ export default function DashboardPage() {
     };
     
     loadCategoryAndServices();
-  }, [categoryId, isAdminSection, isProfileSection, navigate]);
+  }, [categoryId, isAdminSection, isProfileSection, isTransactionsSection, navigate]);
 
   useEffect(() => {
     if (searchTerm.trim() === "") {
@@ -102,7 +104,6 @@ export default function DashboardPage() {
 
   const popularCategories = ["telephone", "eau", "transfert", "impots"];
 
-  // Function to render admin sections based on categoryId
   const renderSection = () => {
     if (isAdminSection) {
       switch (categoryId) {
@@ -112,12 +113,14 @@ export default function DashboardPage() {
           return <FournisseurManagement/>;
         case "users":
           return <UserManagement/>;
-        case "statistiques":
-          return <Statistique/>;
+        
           
       }
     } else if (isProfileSection) {
       return <Profile />;
+    }
+    else if (isTransactionsSection) {
+      return <PaidInvoices />;
     }
   };
 
@@ -126,12 +129,12 @@ export default function DashboardPage() {
       <Sidebar activeItem={categoryId} />
 
       <div className="flex-1 overflow-auto">
-        {isAdminSection ? (
+      {isAdminSection || isProfileSection || isTransactionsSection ? (
           renderSection()
         ) : isProfileSection ? (
           <Profile />
         ) : (
-          // Regular dashboard content
+         
           <>
             <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 shadow-md">
               <div className="max-w-7xl mx-auto">

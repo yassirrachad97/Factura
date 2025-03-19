@@ -114,8 +114,15 @@ export const generateFacture = (factureData) => {
  * Récupère toutes les factures de l'utilisateur connecté
  * @returns {Promise} - Promesse contenant la liste des factures
  */
-export const getUserFactures = () => 
-  axiosInstance.get('/invoices/user').then(res => res.data);
+export const getUserFactures = () => {
+  const token = localStorage.getItem('token');
+  return axiosInstance.get('/invoices/user', {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  }).then(res => res.data);
+};
+
 
 /**
  * Récupère une facture spécifique par son ID

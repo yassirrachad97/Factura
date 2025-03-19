@@ -23,7 +23,13 @@ export class FacturesController {
   @Get('user')
   @UseGuards(AuthGuard('jwt'))
   async getUserFactures(@Req() req: any) {
-    const userId = req.user.id;
+    console.log('User object:', req.user);
+    if (!req.user) {
+      throw new UnauthorizedException('Utilisateur non authentifié');
+    }
+  
+    const userId = req.user._id || req.user.id;
+    console.log('Using user ID:', userId);
     return this.FacturesService.getUserInvoices(userId);
   }
   

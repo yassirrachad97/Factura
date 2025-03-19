@@ -17,7 +17,7 @@ export default function StatistiquesAdmin() {
     monthlyRevenue: []
   });
 
-  // Couleurs pour les graphiques
+ 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#FF6384'];
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function StatistiquesAdmin() {
         setLoading(true);
         const data = await calculateStatistics();
 
-        // Vérifiez que les données sont bien définies
+      
         if (data) {
           setStats(data);
         } else {
@@ -60,7 +60,7 @@ export default function StatistiquesAdmin() {
     );
   }
 
-  // Vérifiez que les données sont bien définies avant de les utiliser
+
   const users = stats.users || [];
   const fournisseurs = stats.fournisseurs || [];
   const categories = stats.categories || [];
@@ -77,7 +77,7 @@ export default function StatistiquesAdmin() {
         </div>
      
       
-      {/* Cards des statistiques globales */}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-blue-500">
           <h3 className="text-sm text-gray-500 font-medium">Total Utilisateurs</h3>
@@ -116,9 +116,9 @@ export default function StatistiquesAdmin() {
         </div>
       </div>
       
-      {/* Graphiques */}
+  
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Évolution des revenus mensuels */}
+     
         <div className="bg-white rounded-xl shadow-md p-4">
           <h3 className="text-lg font-bold mb-4">Évolution des Revenus Mensuels</h3>
           <div className="h-64">

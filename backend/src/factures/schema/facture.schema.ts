@@ -8,7 +8,7 @@ export class factures extends Document {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Fournisseur', required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'fournisseur', required: true })
   fournisseurId: Types.ObjectId;
 
   @Prop({ required: true })

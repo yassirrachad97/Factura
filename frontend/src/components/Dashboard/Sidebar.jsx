@@ -74,11 +74,13 @@ export default function Sidebar({ activeItem, categoriesUpdated }) {
       to: "/dashboard/profile"
     }] : []),
     {
-      id: "transactions",
+      id: "transactions", 
       icon: "📝",
       label: "Transactions",
       description: "Historique des transactions",
+      to: "/dashboard/transactions", 
     },
+  
     {
       id: "logout",
       icon: "🚪",
