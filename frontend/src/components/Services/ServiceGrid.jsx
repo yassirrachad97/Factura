@@ -12,6 +12,7 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
   const [showFactureModal, setShowFactureModal] = useState(false);
   const [facture, setFacture] = useState(null);
   const [selectedAmount, setSelectedAmount] = useState(null);
+  const [isPaid, setIsPaid] = useState(false);
 
   const handleServiceClick = (service) => {
     console.log('Selected Service:', service); 
@@ -19,6 +20,7 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
     setContractNumber('');
     setSelectedAmount(null);
     setShowModal(true);
+    setIsPaid(false);
   };
 
   const isRechargeService = (service) => {
@@ -33,15 +35,13 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
     }
   
     try {
-      let newFacture;
-      console.log('Facture générée:', newFacture);
-
       console.log('Sending request with:', {
         service: selectedService,
         contractNumber,
         fournisseurId: selectedService.id, 
       });
   
+      let newFacture;
       if (isRechargeService(selectedService)) {
         newFacture = await generateRechargeFacture(
           selectedService,
@@ -57,9 +57,12 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
         );
       }
   
+      console.log('Facture générée:', newFacture);
+      
       setFacture(newFacture);
       setShowModal(false);
       setShowFactureModal(true);
+      setIsPaid(false);
     } catch (error) {
       console.error(error.response?.data || error);
       toast.error('Erreur lors de la génération de la facture');
@@ -81,8 +84,7 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
     try {
       await markFactureAsPaid(facture.id);
       toast.success('Paiement effectué avec succès');
-      setShowFactureModal(false);
-      setSelectedAmount(null);
+      setIsPaid(true);
     } catch (error) {
       toast.error('Erreur lors du paiement de la facture');
       console.error(error);
@@ -92,13 +94,18 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
 
   const handleDownloadPDF = async () => {
     try {
-
       await downloadPDF(facture, selectedService.fournisseur, user); 
       toast.success('Facture téléchargée avec succès!');
     } catch (error) {
       toast.error('Erreur lors du téléchargement de la facture');
       console.error(error);
     }
+  };
+
+  const handleCloseFactureModal = () => {
+    setShowFactureModal(false);
+    setSelectedAmount(null);
+    setIsPaid(false);
   };
 
   if (isLoading) {
@@ -122,14 +129,12 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {services?.map((service) => (
-  <div key={service?.id} onClick={() => handleServiceClick(service)} className="cursor-pointer">
-    <ServiceCard service={service} />
-  </div>
-))}
-
+        <div key={service?.id} onClick={() => handleServiceClick(service)} className="cursor-pointer">
+          <ServiceCard service={service} />
+        </div>
+      ))}
       </div>
 
-   
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
@@ -268,27 +273,28 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
             )}
 
             <div className="flex justify-end space-x-4">
+              {isPaid && (
+                <button
+                  onClick={handleDownloadPDF}
+                  className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  Télécharger PDF
+                </button>
+              )}
               <button
-                onClick={handleDownloadPDF}
-                className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                Télécharger PDF
-              </button>
-              <button
-                onClick={() => {
-                  setShowFactureModal(false);
-                  setSelectedAmount(null);
-                }}
+                onClick={handleCloseFactureModal}
                 className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
               >
-                Annuler
+                {isPaid ? 'Fermer' : 'Annuler'}
               </button>
-              <button
-                onClick={handlePayment}
-                className="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-              >
-                Payer
-              </button>
+              {!isPaid && (
+                <button
+                  onClick={handlePayment}
+                  className="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  Payer
+                </button>
+              )}
             </div>
           </div>
         </div>
