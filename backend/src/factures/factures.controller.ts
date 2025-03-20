@@ -1,6 +1,6 @@
 import { Controller, Post, Body, UseGuards, Req, Get, Param, Patch, UnauthorizedException } from '@nestjs/common';
 import { FacturesService } from './factures.service';
-import { CreateFactureDTO } from './DTO/create-facture.dto';
+import { CreateFactureDTO } from './dto/create-facture.dto';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('invoices')

@@ -2,8 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { FournisseursController } from './fournisseurs.controller';
 import { FournisseursService } from './fournisseurs.service';
 import { S3Service } from '../s3/s3.service';
-import { CreatefournisseurDTO } from './DTO/create-fournisseur.dto';
-import { UpdatefournisseurDTO } from './DTO/update-fournisseur.dto';
+import { CreatefournisseurDTO } from './dto/create-fournisseur.dto';
+import { UpdatefournisseurDTO } from './dto/update-fournisseur.dto';
 import { BadRequestException } from '@nestjs/common';
 
 // Mocks des services

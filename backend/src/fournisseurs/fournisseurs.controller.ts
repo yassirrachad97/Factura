@@ -15,12 +15,12 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FournisseursService } from './fournisseurs.service';
-import { CreatefournisseurDTO } from './DTO/create-fournisseur.dto';
+import { CreatefournisseurDTO } from './dto/create-fournisseur.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/schema/user.schema';
-import { UpdatefournisseurDTO } from './DTO/update-fournisseur.dto';
+import { UpdatefournisseurDTO } from './dto/update-fournisseur.dto';
 import { S3Service } from '../s3/s3.service';
 
 @Controller('fournisseurs')

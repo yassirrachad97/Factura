@@ -4,7 +4,7 @@ import { Model, Types } from 'mongoose';
 import { factures } from './schema/facture.schema';
 import { User } from '../users/schema/user.schema';
 import { fournisseur } from '../fournisseurs/schema/fournisseur.schema';
-import { CreateFactureDTO } from './DTO/create-facture.dto';
+import { CreateFactureDTO } from './dto/create-facture.dto';
 
 @Injectable()
 export class FacturesService {

@@ -4,8 +4,8 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { FournisseursService } from './fournisseurs.service';
 import { fournisseur } from './schema/fournisseur.schema';
-import { CreatefournisseurDTO } from './DTO/create-fournisseur.dto';
-import { UpdatefournisseurDTO } from './DTO/update-fournisseur.dto';
+import { CreatefournisseurDTO } from './dto/create-fournisseur.dto';
+import { UpdatefournisseurDTO } from './dto/update-fournisseur.dto';
 
 const mockFournisseur = {
   _id: 'some-id',
