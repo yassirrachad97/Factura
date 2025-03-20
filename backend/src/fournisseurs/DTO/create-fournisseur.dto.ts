@@ -13,7 +13,7 @@ export class CreatefournisseurDTO {
   @IsString()
   category: string;
 
-  @IsOptional() // Le logo peut être vide
-  @IsString() // Il contiendra le chemin du fichier
+  @IsOptional() 
+  @IsString() 
   logo?: string;
 }
