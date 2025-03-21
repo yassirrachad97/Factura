@@ -15,37 +15,46 @@ export class FacturesService {
   ) {}
 
  
-async generateInvoice(userId: string, createFactureDTO: CreateFactureDTO) {
-  console.log('Generating invoice for user:', userId);
-  const { fournisseurId, amount, dueDate } = createFactureDTO;
-
-  if (!fournisseurId) {
-    throw new NotFoundException('Provider ID is required');
+  async generateInvoice(userId: string, createFactureDTO: CreateFactureDTO) {
+    console.log('Generating invoice for user:', userId);
+    const { fournisseurId, amount, dueDate } = createFactureDTO;
+  
+    if (!fournisseurId) {
+      throw new NotFoundException('Provider ID is required');
+    }
+  
+    const provider = await this.FournisseurModel.findById(fournisseurId).exec();
+    if (!provider) {
+      console.error('Provider not found:', fournisseurId);
+      throw new NotFoundException(`Provider with ID ${fournisseurId} not found`);
+    }
+  
+    const contractNumber = `CONTRACT-${Date.now()}`;
+    console.log('Generated contract number:', contractNumber);
+  
+    // Create a new invoice document
+    const invoice = new this.FactureModel({
+      userId,
+      fournisseurId,
+      amount,
+      dueDate: new Date(dueDate),
+      contractNumber,
+      isPaid: false,
+      createdBy: userId,
+    });
+    
+    // Save the invoice to the database
+    const savedInvoice = await invoice.save();
+    console.log('Invoice saved to database with ID:', savedInvoice._id);
+    
+    // Return the saved invoice with the provider info
+    return {
+      ...savedInvoice.toObject(),
+      provider,
+      _id: savedInvoice._id,
+      id: savedInvoice._id.toString() // Adding both _id and id for compatibility
+    };
   }
-
-  const provider = await this.FournisseurModel.findById(fournisseurId).exec();
-  if (!provider) {
-    console.error('Provider not found:', fournisseurId);
-    throw new NotFoundException(`Provider with ID ${fournisseurId} not found`);
-  }
-
-  const contractNumber = `CONTRACT-${Date.now()}`;
-  console.log('Generated contract number:', contractNumber);
-  const invoicePreview = {
-    userId,
-    fournisseurId,
-    provider, 
-    amount,
-    dueDate: new Date(dueDate),
-    contractNumber,
-    isPaid: false,
-    createdBy: userId,
-    createdAt: new Date(),
-    _id: new Types.ObjectId(), 
-  };
-  console.log('Generated invoice preview:', invoicePreview);
-  return invoicePreview;
-}
   
 
 async saveInvoiceAfterPayment(invoiceData: any) {
@@ -89,12 +98,15 @@ async saveInvoiceAfterPayment(invoiceData: any) {
   }
   
   async markInvoiceAsPaid(id: string): Promise<factures> {
+    console.log(`Finding invoice with ID: ${id}`);
     const invoice = await this.FactureModel.findById(id).exec();
     
     if (!invoice) {
+      console.error(`Invoice with ID ${id} not found`);
       throw new NotFoundException(`Invoice with ID ${id} not found`);
     }
     
+    console.log(`Found invoice: ${invoice._id}, updating status to paid`);
     invoice.isPaid = true;
     return invoice.save();
   }

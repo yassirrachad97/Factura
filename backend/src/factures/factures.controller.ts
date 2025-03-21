@@ -15,7 +15,8 @@ export class FacturesController {
       throw new UnauthorizedException('Utilisateur non authentifié');
     }
     const userId = req.user._id;
-    return this.FacturesService.generateInvoice(userId, createFactureDTO);
+    const invoice = await this.FacturesService.generateInvoice(userId, createFactureDTO);
+    return { ...invoice, id: invoice._id.toString() }; // Retournez l'ID explicitement
   }
   
 
@@ -40,8 +41,9 @@ export class FacturesController {
   }
   
   @Post(':id/pay')
- @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'))
   async markFactureAsPaid(@Param('id') id: string) {
+    console.log(`Marking invoice ${id} as paid`);
     return this.FacturesService.markInvoiceAsPaid(id);
   }
 }

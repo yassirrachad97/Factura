@@ -138,7 +138,7 @@ export const getFacture = (id) =>
  * @returns {Promise} - Promesse contenant la facture mise à jour
  */
 export const markFactureAsPaid = (id) => 
-  axiosInstance.patch(`/invoices/${id}/pay`, {}, {
+  axiosInstance.post(`/invoices/${id}/pay`, {}, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`
     }
@@ -148,6 +148,7 @@ export const markFactureAsPaid = (id) =>
     return res.data;
   })
   .catch(error => {
+    console.error('Error marking invoice as paid:', error.response?.data);
     toast.error('Erreur lors du paiement de la facture');
     throw error;
   });

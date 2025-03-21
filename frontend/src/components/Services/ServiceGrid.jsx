@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import { generateUtilityFacture, generateRechargeFacture, markFactureAsPaid, downloadPDF } from '../../api/factureService';
 import ServiceCard from './ServiceCard';
+import { useSelector } from 'react-redux';
 
 const RECHARGE_AMOUNTS = [100, 200, 300, 500, 1000];
 
@@ -13,6 +14,8 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
   const [facture, setFacture] = useState(null);
   const [selectedAmount, setSelectedAmount] = useState(null);
   const [isPaid, setIsPaid] = useState(false);
+
+  const user = useSelector(state => state.auth.user);
 
   const handleServiceClick = (service) => {
     console.log('Selected Service:', service); 
@@ -35,12 +38,6 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
     }
   
     try {
-      console.log('Sending request with:', {
-        service: selectedService,
-        contractNumber,
-        fournisseurId: selectedService.id, 
-      });
-  
       let newFacture;
       if (isRechargeService(selectedService)) {
         newFacture = await generateRechargeFacture(
@@ -57,7 +54,14 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
         );
       }
   
-      console.log('Facture générée:', newFacture);
+      console.log('Réponse de l\'API (Facture générée):', newFacture);
+      
+      // Make sure we have the ID
+      if (!newFacture._id && newFacture.id) {
+        newFacture._id = newFacture.id;
+      } else if (!newFacture.id && newFacture._id) {
+        newFacture.id = newFacture._id.toString();
+      }
       
       setFacture(newFacture);
       setShowModal(false);
@@ -77,12 +81,13 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
   const handlePayment = async () => {
     if (!facture || !facture.id) {
       toast.error('Erreur : ID de la facture introuvable');
-      console.error('Facture invalide:', facture);
+      console.error('Facture invalide:', facture); 
       return;
     }
   
     try {
-      await markFactureAsPaid(facture.id);
+      
+      await markFactureAsPaid(facture._id || facture.id);
       toast.success('Paiement effectué avec succès');
       setIsPaid(true);
     } catch (error) {
@@ -94,7 +99,14 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
 
   const handleDownloadPDF = async () => {
     try {
-      await downloadPDF(facture, selectedService.fournisseur, user); 
+      // Create a fournisseur object from the selectedService
+      const fournisseurData = {
+        name: selectedService.name || 'Fournisseur',
+        email: selectedService.email || ''
+        // Add any other properties needed
+      };
+      
+      await downloadPDF(facture, fournisseurData, user);
       toast.success('Facture téléchargée avec succès!');
     } catch (error) {
       toast.error('Erreur lors du téléchargement de la facture');

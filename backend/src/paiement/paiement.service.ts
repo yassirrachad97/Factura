@@ -24,7 +24,7 @@ export class PaiementService {
 
   async createPaymentIntent(factureId: string, userId: string) {
     try {
-      // Trouver la facture
+     
       const facture = await this.factureModel.findById(factureId).exec();
       if (!facture) {
         throw new BadRequestException('Facture non trouvée');

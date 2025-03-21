@@ -26,7 +26,7 @@ export class UsersService {
       dto.password = await bcrypt.hash(dto.password, saltRounds);
   
   
-      const user = new this.userModel({
+      const user = await this.userModel.create({
         ...dto,
         isVerified: false,
       });

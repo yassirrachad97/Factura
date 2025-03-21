@@ -8,7 +8,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { FournisseursModule } from './fournisseurs/fournisseurs.module';
 import { FacturesModule } from './factures/factures.module';
 import { PaiementModule } from './paiement/paiement.module';
-import { HistoriqueModule } from './historique/historique.module';
 import { CategoryModule } from './category/category.module';
 import { SeedModule } from './seed/seed.module';
 import { StatisticsModule } from './statistics/statistics.module';
@@ -28,7 +27,7 @@ import configuration from './config/configuration';
     FournisseursModule,
     FacturesModule,
     PaiementModule,
-    HistoriqueModule,
+  
     CategoryModule,
     SeedModule,
     StatisticsModule,
