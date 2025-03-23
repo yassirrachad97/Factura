@@ -1,254 +1,327 @@
-// services/factureService.js
-import axiosInstance from './axiosInstance';
-import { toast } from 'react-toastify';
+import axios from 'axios';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
-import { loadStripe } from '@stripe/stripe-js';
+// Only try to import autotable if it's available
+let autoTableModule;
+try {
+  // We're using dynamic import to avoid errors if the module isn't available
+  autoTableModule = require('jspdf-autotable');
+} catch (e) {
+  console.warn("jspdf-autotable not available, will use fallback table method");
+}
 
+const API_URL = 'http://localhost:3000/api';
 
-
-const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
-
-
-
-/**
- * Génère une facture pour un service standard (utilitaire)
- * @param {Object} serviceData - Données du service
- * @param {string} contractNumber - Numéro de contrat
- * @param {string} fournisseurId - ID du fournisseur
- * @returns {Promise} - Promesse contenant la facture générée
- */
-export const generateUtilityFacture = async (serviceData, contractNumber, fournisseurId) => {
-    try {
-      const response = await axiosInstance.post('/invoices/generate', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        fournisseurId: fournisseurId, 
-        amount: Math.floor(Math.random() * (1000 - 100) + 100),
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString(),
-        contractNumber,
-        serviceType: 'utility',
-        serviceName: serviceData.name,
-      });
-
-      console.log('Réponse API (Facture générée) :', response.data);
-  
-      toast.success('Facture générée avec succès!');
-      return response.data;
-    } catch (error) {
-      console.error('Erreur lors de la génération de la facture utilitaire:', error);
-      toast.error('Erreur lors de la génération de la facture');
-      throw error;
-    }
-  };
-/**
- * Génère une facture pour un service de recharge
- * @param {Object} serviceData - Données du service
- * @param {string} cardNumber - Numéro de carte
- * @param {string} fournisseurId - ID du fournisseur
- * @param {number} amount - Montant de la recharge
- * @returns {Promise} - Promesse contenant la facture générée
- */
-export const generateRechargeFacture = async (serviceData, cardNumber, fournisseurId, amount) => {
-  // Calculer la date d'échéance (immédiate pour une recharge)
-  const dueDate = new Date();
-  
-  // Données à envoyer au backend
-  const factureData = {
-    fournisseurId,
-    amount,
-    dueDate: dueDate.toISOString(),
-    contractNumber: cardNumber, // Utiliser le numéro de carte comme numéro de contrat
-    serviceType: 'recharge',
-    serviceName: serviceData.name
-  };
-  
+// Generate Utility Facture
+export const generateUtilityFacture = async (service, contractNumber, fournisseurId) => {
   try {
-    // Appel API pour générer la facture côté serveur
-    const response = await generateFacture(factureData);
-    
-    // Enrichir la réponse avec des détails supplémentaires pour l'affichage
-    return {
-      ...response,
-      date: new Date().toLocaleDateString(),
-      details: [
-        { description: 'Montant de recharge', amount: amount.toFixed(2) },
-        { description: 'Frais de service', amount: '0.00' }
-      ],
-      type: 'recharge'
-    };
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('User not authenticated');
+    }
+
+    const amount = Math.floor(Math.random() * 900) + 100; // Random amount between 100 and 1000
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 30); // Due date is 30 days from now
+
+    const response = await axios.post(
+      `${API_URL}/invoices/generate`,
+      {
+        fournisseurId: fournisseurId,
+        amount,
+        dueDate: dueDate.toISOString(),
+        contractNumber,
+        serviceType: 'Utility',
+        serviceName: service.name,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    console.log('Réponse API (Facture générée) :', response.data);
+    return response.data;
   } catch (error) {
-    console.error('Erreur lors de la génération de la facture de recharge:', error);
+    console.error('Erreur lors de la génération de la facture:', error);
     throw error;
   }
 };
 
-/**
- * Fonction principale pour générer une facture via l'API
- * @param {Object} factureData - Données de la facture
- * @returns {Promise} - Promesse contenant la réponse de l'API
- */
-export const generateFacture = (factureData) => {
-  const token = localStorage.getItem('token');
-  
-  return axiosInstance.post('/invoices/generate', factureData, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+// Generate Recharge Facture
+export const generateRechargeFacture = async (service, cardNumber, fournisseurId, amount) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('User not authenticated');
     }
-  })
-  .then(res => {
-    toast.success('Facture générée avec succès!');
-    return res.data;
-  })
-  .catch(error => {
-    console.error('Erreur lors de la génération de la facture:', error);
-    console.error('Réponse du serveur:', error.response?.data);
-    toast.error('Erreur lors de la génération de la facture');
+
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 7); // Due date is 7 days from now for recharges
+
+    const response = await axios.post(
+      `${API_URL}/invoices/generate`,
+      {
+        fournisseurId: fournisseurId,
+        amount,
+        dueDate: dueDate.toISOString(),
+        contractNumber: cardNumber,
+        serviceType: 'Recharge',
+        serviceName: service.name,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    console.log('Réponse API (Recharge générée) :', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Erreur lors de la génération de la recharge:', error);
     throw error;
-  });
+  }
 };
 
-/**
- * Récupère toutes les factures de l'utilisateur connecté
- * @returns {Promise} - Promesse contenant la liste des factures
- */
-export const getUserFactures = () => {
-  const token = localStorage.getItem('token');
-  return axiosInstance.get('/invoices/user', {
-    headers: {
-      'Authorization': `Bearer ${token}`
+// Get User Factures
+export const getUserFactures = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('User not authenticated');
     }
-  }).then(res => res.data);
+
+    const response = await axios.get(`${API_URL}/invoices/user`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Erreur lors de la récupération des factures:', error);
+    throw error;
+  }
 };
 
-
-/**
- * Récupère une facture spécifique par son ID
- * @param {string} id - ID de la facture
- * @returns {Promise} - Promesse contenant les détails de la facture
- */
-export const getFacture = (id) => 
-  axiosInstance.get(`/invoices/${id}`).then(res => res.data);
-
-/**
- * Marque une facture comme payée
- * @param {string} id - ID de la facture
- * @returns {Promise} - Promesse contenant la facture mise à jour
- */
-export const markFactureAsPaid = (id) => 
-  axiosInstance.post(`/invoices/${id}/pay`, {}, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    }
-  })
-  .then(res => {
-    toast.success('Facture marquée comme payée!');
-    return res.data;
-  })
-  .catch(error => {
-    console.error('Error marking invoice as paid:', error.response?.data);
-    toast.error('Erreur lors du paiement de la facture');
-    throw error;
-  });
-
-/**
- * Génère un document PDF pour une facture
- * @param {Object} facture - Données de la facture
- * @param {Object} fournisseur - Données du fournisseur
- * @param {Object} user - Données de l'utilisateur
- * @returns {jsPDF} - Document PDF généré
- */
-export const generatePDF = (facture, fournisseur, user) => {
+// Basic PDF generation without using autoTable
+const generateBasicPDF = (facture, fournisseur, user) => {
+  // Create a new document
   const doc = new jsPDF();
-  const pageWidth = doc.internal.pageSize.getWidth();
   
-  // En-tête
+  // Add title
   doc.setFontSize(20);
   doc.setTextColor(40, 40, 40);
-  doc.text("FACTURE", pageWidth / 2, 20, { align: 'center' });
+  doc.text('FACTURE', 105, 20, { align: 'center' });
   
-  // Informations de la facture
+  // Add logo placeholder or company name
+  doc.setFontSize(16);
+  doc.text('FACTURA', 20, 20);
+  
+  // Add a divider
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.5);
+  doc.line(20, 25, 190, 25);
+  
+  // Add invoice information in a box
+  doc.setFillColor(240, 240, 240);
+  doc.rect(130, 30, 60, 25, 'F');
   doc.setFontSize(10);
-  doc.text(`N° Facture: ${facture.contractNumber}`, 14, 30);
-  doc.text(`Date d'émission: ${new Date().toLocaleDateString('fr-FR')}`, 14, 35);
-  doc.text(`Date d'échéance: ${new Date(facture.dueDate).toLocaleDateString('fr-FR')}`, 14, 40);
+  doc.setTextColor(80, 80, 80);
+  doc.text('DÉTAILS DE LA FACTURE', 160, 35, { align: 'center' });
+  doc.setTextColor(40, 40, 40);
+  doc.text(`N° ${facture.contractNumber}`, 160, 42, { align: 'center' });
+  const createdDate = facture.createdAt ? new Date(facture.createdAt) : new Date();
+  doc.text(`Date: ${createdDate.toLocaleDateString()}`, 160, 48, { align: 'center' });
   
-  // Informations du fournisseur
+  // Client information
   doc.setFontSize(12);
-  doc.setFont(undefined, 'bold');
-  doc.text("Fournisseur", 14, 55);
-  doc.setFont(undefined, 'normal');
+  doc.setTextColor(80, 80, 80);
+  doc.text('FACTURÉ À:', 20, 35);
   doc.setFontSize(10);
-  doc.text(`${fournisseur.name}`, 14, 60);
+  doc.setTextColor(40, 40, 40);
+  doc.text(`${user?.firstname || ''} ${user?.lastname || ''}`, 20, 42);
+  doc.text(`Email: ${user?.email || ''}`, 20, 48);
+  doc.text(`Tél: ${user?.telephone || ''}`, 20, 54);
   
-  // Informations du client
+  // Add provider information
   doc.setFontSize(12);
-  doc.setFont(undefined, 'bold');
-  doc.text("Client", pageWidth - 90, 55);
-  doc.setFont(undefined, 'normal');
+  doc.setTextColor(80, 80, 80);
+  doc.text('FOURNISSEUR:', 75, 35);
   doc.setFontSize(10);
-  doc.text(`${user.firstName} ${user.lastName}`, pageWidth - 90, 60);
-  doc.text(`Tél: ${user.phone || ''}`, pageWidth - 90, 70);
+  doc.setTextColor(40, 40, 40);
+  doc.text(`${fournisseur?.name || 'Fournisseur'}`, 75, 42);
   
-  // Tableau des détails
-  doc.autoTable({
-    startY: 85,
-    head: [['Description', 'Montant HT']],
-    body: [
-      [`Services de ${fournisseur.name}`, `${facture.amount.toFixed(2)} MAD`],
-    ],
-    foot: [
-      ['Total HT', `${facture.amount.toFixed(2)} MAD`],
-      ['TVA (20%)', `${(facture.amount * 0.2).toFixed(2)} MAD`],
-      ['Total TTC', `${(facture.amount * 1.2).toFixed(2)} MAD`]
-    ],
-    theme: 'striped',
-    headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-    footStyles: { fillColor: [220, 220, 220], textColor: 0, fontStyle: 'bold' }
-  });
+  // Draw table header manually
+  doc.setFillColor(66, 66, 110);
+  doc.setTextColor(255, 255, 255);
+  doc.rect(20, 65, 170, 10, 'F');
+  doc.text('Description', 30, 71);
+  doc.text('Date limite', 95, 71);
+  doc.text('Montant', 160, 71);
   
-  // Statut de paiement
-  const yPos = doc.lastAutoTable.finalY + 10;
+  // Draw table content
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Service ${fournisseur?.name || ''}`, 30, 81);
+  const dueDate = facture.dueDate ? new Date(facture.dueDate) : new Date();
+  doc.text(dueDate.toLocaleDateString(), 95, 81);
+  doc.text(`${facture.amount} MAD`, 160, 81);
+  
+  // Draw total row
+  doc.setFillColor(240, 240, 240);
+  doc.rect(20, 85, 170, 10, 'F');
+  doc.text('Total', 95, 91);
+  doc.text(`${facture.amount} MAD`, 160, 91);
+  
+  // Add payment status
   doc.setFontSize(12);
-  doc.setFont(undefined, 'bold');
   if (facture.isPaid) {
     doc.setTextColor(0, 128, 0);
-    doc.text("PAYÉE", pageWidth / 2, yPos, { align: 'center' });
+    doc.text('PAYÉ', 105, 120, { align: 'center' });
   } else {
-    doc.setTextColor(220, 50, 50);
-    doc.text("EN ATTENTE DE PAIEMENT", pageWidth / 2, yPos, { align: 'center' });
+    doc.setTextColor(220, 53, 69);
+    doc.text('À PAYER', 105, 120, { align: 'center' });
   }
   
-  // Coordonnées bancaires
-  doc.setTextColor(40, 40, 40);
-  doc.setFontSize(10);
-  doc.setFont(undefined, 'normal');
-  doc.text("Coordonnées bancaires:", 14, yPos + 10);
-  doc.text("IBAN: FR76 XXXX XXXX XXXX XXXX XXXX XXX", 14, yPos + 15);
-  doc.text("BIC: XXXXXXXX", 14, yPos + 20);
-  
-  // Pied de page
+  // Add footer
   doc.setFontSize(8);
-  doc.text("Merci pour votre confiance. Cette facture est payable dans les délais indiqués ci-dessus.", 14, yPos + 30);
+  doc.setTextColor(128, 128, 128);
+  doc.text('Factura - Powered by YCD © 2025', 105, 285, { align: 'center' });
   
   return doc;
 };
 
-/**
- * Télécharge une facture au format PDF
- * @param {Object} facture - Données de la facture
- * @param {Object} fournisseur - Données du fournisseur
- * @param {Object} user - Données de l'utilisateur
- */
+// Generate PDF with autoTable if available
+const generatePDF = (facture, fournisseur, user) => {
+  // Create a new document
+  const doc = new jsPDF();
+  
+  // Add title
+  doc.setFontSize(20);
+  doc.setTextColor(40, 40, 40);
+  doc.text('FACTURE', 105, 20, { align: 'center' });
+  
+  // Add logo placeholder or company name
+  doc.setFontSize(16);
+  doc.text('FACTURA', 20, 20);
+  
+  // Add a divider
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.5);
+  doc.line(20, 25, 190, 25);
+  
+  // Add invoice information in a box
+  doc.setFillColor(240, 240, 240);
+  doc.rect(130, 30, 60, 25, 'F');
+  doc.setFontSize(10);
+  doc.setTextColor(80, 80, 80);
+  doc.text('DÉTAILS DE LA FACTURE', 160, 35, { align: 'center' });
+  doc.setTextColor(40, 40, 40);
+  doc.text(`N° ${facture.contractNumber}`, 160, 42, { align: 'center' });
+  const createdDate = facture.createdAt ? new Date(facture.createdAt) : new Date();
+  doc.text(`Date: ${createdDate.toLocaleDateString()}`, 160, 48, { align: 'center' });
+  
+
+  doc.setFontSize(12);
+  doc.setTextColor(80, 80, 80);
+  doc.text('FACTURÉ À:', 20, 35);
+  doc.setFontSize(10);
+  doc.setTextColor(40, 40, 40);
+  doc.text(`${user?.firstname || ''} ${user?.lastname || ''}`, 20, 42);
+  doc.text(`Email: ${user?.email || ''}`, 20, 48);
+  doc.text(`Tél: ${user?.telephone || ''}`, 20, 54);
+  
+
+  doc.setFontSize(12);
+  doc.setTextColor(80, 80, 80);
+  doc.text('FOURNISSEUR:', 75, 35);
+  doc.setFontSize(10);
+  doc.setTextColor(40, 40, 40);
+  doc.text(`${fournisseur?.name || 'Fournisseur'}`, 75, 42);
+  
+
+  if (typeof doc.autoTable === 'function') {
+   
+    doc.autoTable({
+      startY: 65,
+      head: [['Description', 'Date limite', 'Montant']],
+      body: [
+        [
+          `Service ${fournisseur?.name || ''}`, 
+          new Date(facture.dueDate || new Date()).toLocaleDateString(),
+          `${facture.amount} MAD`
+        ],
+      ],
+      foot: [['', 'Total', `${facture.amount} MAD`]],
+      theme: 'grid',
+      headStyles: { 
+        fillColor: [66, 66, 110],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      footStyles: { 
+        fillColor: [240, 240, 240],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold'
+      }
+    });
+  } else {
+  
+    doc.setFillColor(66, 66, 110);
+    doc.setTextColor(255, 255, 255);
+    doc.rect(20, 65, 170, 10, 'F');
+    doc.text('Description', 30, 71);
+    doc.text('Date limite', 95, 71);
+    doc.text('Montant', 160, 71);
+    
+    // Draw table content
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Service ${fournisseur?.name || ''}`, 30, 81);
+    const dueDate = facture.dueDate ? new Date(facture.dueDate) : new Date();
+    doc.text(dueDate.toLocaleDateString(), 95, 81);
+    doc.text(`${facture.amount} MAD`, 160, 81);
+    
+    // Draw total row
+    doc.setFillColor(240, 240, 240);
+    doc.rect(20, 85, 170, 10, 'F');
+    doc.text('Total', 95, 91);
+    doc.text(`${facture.amount} MAD`, 160, 91);
+  }
+
+  doc.setFontSize(12);
+  if (facture.isPaid) {
+    doc.setTextColor(0, 128, 0);
+    doc.text('PAYÉ', 105, 120, { align: 'center' });
+  } else {
+    doc.setTextColor(220, 53, 69);
+    doc.text('À PAYER', 105, 120, { align: 'center' });
+  }
+
+  doc.setFontSize(8);
+  doc.setTextColor(128, 128, 128);
+  doc.text('Factura - Powered by YCD © 2025', 105, 285, { align: 'center' });
+  
+  return doc;
+};
+
+// Download PDF
 export const downloadPDF = async (facture, fournisseur, user) => {
   try {
-    const doc = generatePDF(facture, fournisseur, user);
-    doc.save(`Facture_${facture.contractNumber}.pdf`);
-    toast.success('Facture téléchargée avec succès!');
+    // First try with autoTable if available
+    let doc;
+    try {
+      doc = generatePDF(facture, fournisseur, user);
+    } catch (e) {
+      console.warn('Failed to generate PDF with autoTable, falling back to basic PDF', e);
+      // If that fails, use the basic version
+      doc = generateBasicPDF(facture, fournisseur, user);
+    }
+    
+    doc.save(`facture-${facture.contractNumber}.pdf`);
+    return true;
   } catch (error) {
     console.error('Erreur lors de la génération du PDF:', error);
-    toast.error('Erreur lors du téléchargement de la facture');
+    throw error;
   }
 };
