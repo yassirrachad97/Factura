@@ -25,7 +25,7 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredServices, setFilteredServices] = useState([]);
 
-  // Admin specific section handlers
+
   const isAdminSection = role === "admin" && ["categories", "fournisseurs", "users", "statistiques"].includes(categoryId);
   const isTransactionsSection = categoryId === "transactions";
   const isProfileSection = categoryId === "profile" && role !== "admin";
@@ -114,6 +114,10 @@ export default function DashboardPage() {
         case "users":
           return <UserManagement/>;
         
+          case "statistiques":
+            return <Statistique/>;  // Add this case
+          default:
+            return null;
           
       }
     } else if (isProfileSection) {

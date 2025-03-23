@@ -1,6 +1,4 @@
-// paiement/paiement.service.ts
-
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { InjectModel } from '@nestjs/mongoose';
@@ -17,30 +15,30 @@ export class PaiementService {
     @InjectModel(factures.name) private factureModel: Model<factures>,
     @InjectModel(User.name) private userModel: Model<User>,
   ) {
-    this.stripe = new Stripe(this.configService.get<string>('STRIPE_SECRET_KEY'), {
-      // apiVersion: '2023-10-16',
+    this.stripe = new Stripe(this.configService.get<string>('stripe.secretKey'), {
+      apiVersion: '2025-02-24.acacia',
     });
   }
 
   async createPaymentIntent(factureId: string, userId: string) {
     try {
-     
+      // Fetch the invoice
       const facture = await this.factureModel.findById(factureId).exec();
       if (!facture) {
-        throw new BadRequestException('Facture non trouvée');
+        throw new NotFoundException('Facture non trouvée');
       }
 
       if (facture.isPaid) {
         throw new BadRequestException('Cette facture a déjà été payée');
       }
 
-      // Trouver l'utilisateur
+      // Find the user
       const user = await this.userModel.findById(userId).exec();
       if (!user) {
-        throw new BadRequestException('Utilisateur non trouvé');
+        throw new NotFoundException('Utilisateur non trouvé');
       }
 
-      // Créer un client Stripe si l'utilisateur n'en a pas déjà un
+      // Create a Stripe customer if the user doesn't have one yet
       if (!user.stripeCustomerId) {
         const customer = await this.stripe.customers.create({
           email: user.email,
@@ -52,17 +50,21 @@ export class PaiementService {
         await user.save();
       }
 
-      // Créer un intent de paiement avec Stripe
-      const amount = Math.round(facture.amount * 100); // Convertir en centimes
+      // Convert amount to cents (Stripe uses the smallest currency unit)
+      const amount = Math.round(facture.amount * 100);
+      
+      // Create a payment intent with Stripe
       const paymentIntent = await this.stripe.paymentIntents.create({
         amount,
-        currency: 'mad', // Dirham marocain
+        currency: this.configService.get<string>('stripe.currency', 'mad'),
         customer: user.stripeCustomerId,
         metadata: {
           factureId: facture.id,
           contractNumber: facture.contractNumber,
-        
           userId: userId,
+        },
+        automatic_payment_methods: {
+          enabled: true,
         },
       });
 
@@ -70,6 +72,7 @@ export class PaiementService {
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
         amount: facture.amount,
+        publicKey: this.configService.get<string>('stripe.publicKey'),
       };
     } catch (error) {
       console.error('Erreur lors de la création du paiement:', error);
@@ -83,24 +86,35 @@ export class PaiementService {
     try {
       const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
       
-      if (paymentIntent.status === 'succeeded') {
+      if (paymentIntent.status === 'succeeded' || paymentIntent.status === 'processing') {
         const factureId = paymentIntent.metadata.factureId;
         
-        // Mettre à jour la facture comme payée
+        // Mark the invoice as paid
         const facture = await this.factureModel.findByIdAndUpdate(
           factureId,
           { 
             isPaid: true, 
             paidAt: new Date(),
-            paymentIntentId: paymentIntentId
+            paymentIntentId: paymentIntentId 
           },
           { new: true }
         ).exec();
 
-        return { success: true, facture };
+        if (!facture) {
+          throw new NotFoundException(`Facture avec ID ${factureId} non trouvée`);
+        }
+
+        return { 
+          success: true, 
+          status: paymentIntent.status,
+          facture 
+        };
       }
       
-      return { success: false, status: paymentIntent.status };
+      return { 
+        success: false, 
+        status: paymentIntent.status 
+      };
     } catch (error) {
       console.error('Erreur lors de la confirmation du paiement:', error);
       throw new BadRequestException(
@@ -112,6 +126,7 @@ export class PaiementService {
   async getPaymentStatus(paymentIntentId: string) {
     try {
       const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
+      
       return {
         status: paymentIntent.status,
         factureId: paymentIntent.metadata.factureId,
@@ -126,24 +141,47 @@ export class PaiementService {
 
   async handleWebhook(signature: string, payload: Buffer) {
     try {
-      const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
+      const webhookSecret = this.configService.get<string>('stripe.webhookSecret');
+      if (!webhookSecret) {
+        throw new BadRequestException('Webhook secret not configured');
+      }
+
       const event = this.stripe.webhooks.constructEvent(
         payload,
         signature,
         webhookSecret,
       );
 
-      if (event.type === 'payment_intent.succeeded') {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        await this.confirmPayment(paymentIntent.id);
+      // Handle different event types
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          await this.handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
+          break;
+        case 'payment_intent.payment_failed':
+          await this.handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
+          break;
+        // Add more event types as needed
       }
 
-      return { received: true };
+      return { received: true, type: event.type };
     } catch (error) {
       console.error('Erreur lors du traitement du webhook:', error);
       throw new BadRequestException(
         error.message || 'Erreur lors du traitement du webhook',
       );
+    }
+  }
+
+  private async handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+    // Process the successful payment (already handled in confirmPayment)
+    await this.confirmPayment(paymentIntent.id);
+  }
+
+  private async handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
+    const factureId = paymentIntent.metadata.factureId;
+    if (factureId) {
+      // Update the invoice status to indicate payment failure if needed
+      console.log(`Payment failed for invoice ${factureId}`);
     }
   }
 }

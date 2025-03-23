@@ -7,7 +7,12 @@ import riadLogo from "../../assets/riad-logo.png";
 
 export default function Sidebar({ activeItem, categoriesUpdated }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user, role } = useSelector((state) => state.auth);
+  const authState = useSelector((state) => state.auth);
+  console.log("Auth State:", authState);
+
+  const user = authState.user || authState;
+  const role = authState.role || user?.role || "user";
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const dispatch = useDispatch();
@@ -163,10 +168,27 @@ export default function Sidebar({ activeItem, categoriesUpdated }) {
 
   console.log(organizedItems);
 
+    
+ 
+  const getUsernameInitial = () => {
+    // Changed to prioritize firstname (as seen in profile component)
+    const displayName = user?.firstname || user?.username || user?.email || "";
+    return displayName ? displayName.charAt(0).toUpperCase() : "U";
+  };
+  
+
+  const getDisplayUsername = () => {
+    if (user?.firstname && user?.lastname) {
+      return `${user.firstname} ${user.lastname}`;
+    }
+    return user?.username || user?.firstname || user?.email || "Utilisateur";
+  };
+
+
   return (
     <div className={`bg-[#1a1a27] text-white h-screen relative ${isCollapsed ? 'w-20' : 'w-64'} transition-all duration-300`}>
       <div className="flex flex-col h-full">
-        {/* Header with Logo and User Info */}
+       
         <div className="p-4 border-b border-gray-800">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
@@ -180,17 +202,17 @@ export default function Sidebar({ activeItem, categoriesUpdated }) {
             </button>
           </div>
           
-          {/* User Info Section */}
+       
           <div className="flex items-center mt-2">
             <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center">
               <span className="text-white text-lg font-medium">
-                {user?.username?.charAt(0).toUpperCase() || "U"}
+                {getUsernameInitial()}
               </span>
             </div>
             {!isCollapsed && (
               <div className="ml-3">
                 <p className="text-sm font-medium text-white">
-                  {user?.username || "Utilisateur"}
+                  {getDisplayUsername()}
                 </p>
                 <p className="text-xs text-gray-400">
                   {role === "admin" ? "Administrateur" : "Compte Standard"}
@@ -198,9 +220,9 @@ export default function Sidebar({ activeItem, categoriesUpdated }) {
               </div>
             )}
           </div>
+          
         </div>
-
-        {/* Rest of the sidebar content */}
+       
         <div className="flex-1 overflow-y-auto py-4">
           {organizedItems.map((group, groupIndex) => (
             <div key={groupIndex} className="mb-4">

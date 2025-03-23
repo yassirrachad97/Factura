@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-import { generateUtilityFacture, generateRechargeFacture, markFactureAsPaid, downloadPDF } from '../../api/factureService';
+import { generateUtilityFacture, generateRechargeFacture, downloadPDF } from '../../api/factureService';
 import ServiceCard from './ServiceCard';
 import { useSelector } from 'react-redux';
+import PaymentModal from '../Payement/PaymentModal';
+
+// import PaymentModal from '../Payment/PaymentModal';
 
 const RECHARGE_AMOUNTS = [100, 200, 300, 500, 1000];
 
@@ -14,6 +17,7 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
   const [facture, setFacture] = useState(null);
   const [selectedAmount, setSelectedAmount] = useState(null);
   const [isPaid, setIsPaid] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const user = useSelector(state => state.auth.user);
 
@@ -40,6 +44,10 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
     try {
       let newFacture;
       if (isRechargeService(selectedService)) {
+        if (!selectedAmount) {
+          toast.error('Veuillez sélectionner un montant');
+          return;
+        }
         newFacture = await generateRechargeFacture(
           selectedService,
           contractNumber,
@@ -78,24 +86,19 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
     setSelectedAmount(amount);
   };
 
-  const handlePayment = async () => {
-    if (!facture || !facture.id) {
-      toast.error('Erreur : ID de la facture introuvable');
-      console.error('Facture invalide:', facture); 
-      return;
-    }
-  
-    try {
-      
-      await markFactureAsPaid(facture._id || facture.id);
-      toast.success('Paiement effectué avec succès');
-      setIsPaid(true);
-    } catch (error) {
-      toast.error('Erreur lors du paiement de la facture');
-      console.error(error);
-    }
+  const handlePayment = () => {
+    // Instead of directly marking as paid, show Stripe payment modal
+    setShowPaymentModal(true);
+    setShowFactureModal(false);
   };
   
+  const handlePaymentSuccess = (result) => {
+    console.log('Payment successful:', result);
+    toast.success('Paiement effectué avec succès');
+    setIsPaid(true);
+    setShowPaymentModal(false);
+    setShowFactureModal(true);
+  };
 
   const handleDownloadPDF = async () => {
     try {
@@ -230,7 +233,7 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
                         <span className="text-gray-600">Numéro de carte</span>
                         <span className="font-medium">{contractNumber}</span>
                       </div>
-                      {facture.details.map((detail, index) => (
+                      {facture.details && facture.details.map((detail, index) => (
                         <div key={index} className="flex justify-between">
                           <span className="text-gray-600">{detail.description}</span>
                           <span className="font-medium">{detail.amount} MAD</span>
@@ -260,11 +263,11 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
                
                 <div className="flex justify-between">
                   <span className="text-gray-600">Date d'émission</span>
-                  <span className="font-medium">{facture.createdAt}</span>
+                  <span className="font-medium">{new Date(facture.createdAt).toLocaleDateString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Date limite de paiement</span>
-                  <span className="font-medium">{facture.dueDate}</span>
+                  <span className="font-medium">{new Date(facture.dueDate).toLocaleDateString()}</span>
                 </div>
 
                 <div className="border-t border-b py-4">
@@ -304,12 +307,23 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
                   onClick={handlePayment}
                   className="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                 >
-                  Payer
+                  Payer en ligne
                 </button>
               )}
             </div>
           </div>
         </div>
+      )}
+
+      {/* Payment Modal */}
+      {showPaymentModal && facture && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          factureId={facture._id || facture.id}
+          factureAmount={facture.amount}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
       )}
     </>
   );

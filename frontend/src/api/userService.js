@@ -21,3 +21,12 @@ export const getUserProfile = async () => {
     throw new Error('Failed to fetch user profile');
   }
 };
+
+export const updateUserProfile = async (updatedData) => {
+  try {
+    const response = await axiosInstance.post('/users/update-profile', updatedData); 
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to update profile');
+  }
+};

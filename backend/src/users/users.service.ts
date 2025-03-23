@@ -255,4 +255,25 @@ export class UsersService {
       role: user.role
     };
   }
+
+
+  async updateUserProfile(
+    email: string,
+    updatedData: { firstname: string; lastname: string; username: string; telephone: string },
+  ): Promise<User> {
+    const user = await this.userModel.findOne({ email }).exec();
+    if (!user) {
+      throw new BadRequestException('Utilisateur non trouvé');
+    }
+  
+    // Update the user fields
+    user.firstname = updatedData.firstname;
+    user.lastname = updatedData.lastname;
+    user.username = updatedData.username;
+    user.telephone = updatedData.telephone;
+  
+    // Save the updated user
+    await user.save();
+    return user;
+  }
 }

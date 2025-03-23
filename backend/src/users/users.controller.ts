@@ -67,4 +67,13 @@ export class UsersController {
   async getUserProfile(@Request() req) {
     return this.usersService.getUserInfo(req.user.email);
   }
+
+  @Post('update-profile') 
+  @UseGuards(AuthGuard('jwt'))
+  async updateUserProfile(
+    @Request() req,
+    @Body() body: { firstname: string; lastname: string; username: string; telephone: string },
+  ) {
+    return this.usersService.updateUserProfile(req.user.email, body);
+  }
 }
