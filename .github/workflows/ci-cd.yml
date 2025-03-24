@@ -38,7 +38,7 @@ jobs:
         env:
            username: ${{ secrets.DOCKER_HUB_USERNAME }}
            password: ${{ secrets.DOCKER_HUB_TOKEN }}
-        run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+        run: docker login -u $DOCKER_HUB_USERNAMEE -p $DOCKER_HUB_TOKEN 
 
       - name: Build and push backend image
         run: |
