@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # frontend:
+  #   build: 
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "5173:5173"
+  #   environment:
+  #     - VITE_API_URL=http://backend:3000
+  #     - REACT_APP_API_URL=http://backend:3000/api
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - factura-network
+
+backend:
+  build: 
+    context: ./backend
+    dockerfile: Dockerfile
+  ports:
+    - "3000:3000"
+  env_file:
+    - ./backend/.env
+  environment:
+    - DATABASE_URL=mongodb://mongodb:27017/factura
+    - PORT=3000
+  depends_on:
+    - mongodb
+  networks:
+    - factura-network
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - factura-network
+
+  mongo-express:
+    image: mongo-express
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_PORT=27017
+    depends_on:
+      - mongodb
+    networks:
+      - factura-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  factura-network:
+    driver: bridge
