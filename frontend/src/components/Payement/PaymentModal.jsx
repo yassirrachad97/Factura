@@ -9,11 +9,11 @@ const PaymentModal = ({ isOpen, onClose, factureId, factureAmount, onPaymentSucc
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   
-  // Use this to re-render Stripe Elements when the client secret changes
+ 
   const [stripeKey, setStripeKey] = useState(1);
 
   useEffect(() => {
-    // Reset state when the modal is closed
+   
     if (!isOpen) {
       setClientSecret('');
       setPaymentIntentId('');
@@ -21,20 +21,20 @@ const PaymentModal = ({ isOpen, onClose, factureId, factureAmount, onPaymentSucc
       return;
     }
     
-    // Make sure we have a factureId
+  
     if (!factureId) {
       setError('ID de facture manquant');
       setIsLoading(false);
       return;
     }
 
-    // Create a payment intent
+
     const fetchPaymentIntent = async () => {
       try {
         setIsLoading(true);
         const result = await createPaymentIntent(factureId);
         
-        // Increment key to force re-render of Stripe Elements
+       
         setStripeKey(prevKey => prevKey + 1);
         
         setClientSecret(result.clientSecret);
@@ -52,17 +52,17 @@ const PaymentModal = ({ isOpen, onClose, factureId, factureAmount, onPaymentSucc
   }, [isOpen, factureId]);
 
   const handlePaymentSuccess = (result) => {
-    // Handle successful payment
+  
     console.log('Payment successful:', result);
     onPaymentSuccess && onPaymentSuccess(result);
     
-    // Close modal after a short delay
+ 
     setTimeout(() => onClose(), 2000);
   };
 
   const handlePaymentError = (error) => {
     console.error('Payment error:', error);
-    // Error will be displayed in the stripe form, no need to handle it here
+  
   };
 
   if (!isOpen) return null;

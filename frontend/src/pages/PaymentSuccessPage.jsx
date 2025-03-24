@@ -12,7 +12,7 @@ const PaymentSuccessPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Get the payment_intent from the URL
+ 
   const paymentIntentId = searchParams.get('payment_intent');
   
   useEffect(() => {
@@ -27,7 +27,7 @@ const PaymentSuccessPage = () => {
         const result = await getPaymentStatus(paymentIntentId);
         setPaymentStatus(result.status);
         
-        // After 5 seconds, redirect to dashboard
+      
         const timer = setTimeout(() => {
           navigate('/dashboard');
         }, 5000);
@@ -48,10 +48,10 @@ const PaymentSuccessPage = () => {
     if (!paymentIntentId) return;
 
     try {
-      // First get the payment status to retrieve the factureId
+    
       const result = await getPaymentStatus(paymentIntentId);
       if (result.factureId) {
-        // You need to implement this part according to your existing downloadPDF function
+       
         await downloadPDF({ id: result.factureId });
         toast.success('Facture téléchargée avec succès!');
       } else {

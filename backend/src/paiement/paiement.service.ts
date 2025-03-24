@@ -22,7 +22,7 @@ export class PaiementService {
 
   async createPaymentIntent(factureId: string, userId: string) {
     try {
-      // Fetch the invoice
+     
       const facture = await this.factureModel.findById(factureId).exec();
       if (!facture) {
         throw new NotFoundException('Facture non trouvée');
@@ -32,13 +32,13 @@ export class PaiementService {
         throw new BadRequestException('Cette facture a déjà été payée');
       }
 
-      // Find the user
+   
       const user = await this.userModel.findById(userId).exec();
       if (!user) {
         throw new NotFoundException('Utilisateur non trouvé');
       }
 
-      // Create a Stripe customer if the user doesn't have one yet
+     
       if (!user.stripeCustomerId) {
         const customer = await this.stripe.customers.create({
           email: user.email,
@@ -50,10 +50,10 @@ export class PaiementService {
         await user.save();
       }
 
-      // Convert amount to cents (Stripe uses the smallest currency unit)
+    
       const amount = Math.round(facture.amount * 100);
       
-      // Create a payment intent with Stripe
+     
       const paymentIntent = await this.stripe.paymentIntents.create({
         amount,
         currency: this.configService.get<string>('stripe.currency', 'mad'),
@@ -152,7 +152,7 @@ export class PaiementService {
         webhookSecret,
       );
 
-      // Handle different event types
+   
       switch (event.type) {
         case 'payment_intent.succeeded':
           await this.handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
@@ -160,7 +160,7 @@ export class PaiementService {
         case 'payment_intent.payment_failed':
           await this.handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
           break;
-        // Add more event types as needed
+     
       }
 
       return { received: true, type: event.type };
@@ -173,14 +173,14 @@ export class PaiementService {
   }
 
   private async handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
-    // Process the successful payment (already handled in confirmPayment)
+
     await this.confirmPayment(paymentIntent.id);
   }
 
   private async handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
     const factureId = paymentIntent.metadata.factureId;
     if (factureId) {
-      // Update the invoice status to indicate payment failure if needed
+  
       console.log(`Payment failed for invoice ${factureId}`);
     }
   }

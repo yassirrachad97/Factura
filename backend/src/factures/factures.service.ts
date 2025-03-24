@@ -32,7 +32,7 @@ export class FacturesService {
     const contractNumber = `CONTRACT-${Date.now()}`;
     console.log('Generated contract number:', contractNumber);
   
-    // Create a new invoice document
+
     const invoice = new this.FactureModel({
       userId,
       fournisseurId,
@@ -43,16 +43,16 @@ export class FacturesService {
       createdBy: userId,
     });
     
-    // Save the invoice to the database
+  
     const savedInvoice = await invoice.save();
     console.log('Invoice saved to database with ID:', savedInvoice._id);
     
-    // Return the saved invoice with the provider info
+  
     return {
       ...savedInvoice.toObject(),
       provider,
       _id: savedInvoice._id,
-      id: savedInvoice._id.toString() // Adding both _id and id for compatibility
+      id: savedInvoice._id.toString() 
     };
   }
   

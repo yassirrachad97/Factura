@@ -18,7 +18,11 @@ const StripeCheckoutForm = ({ clientSecret, paymentIntentId, onSuccess, onError 
       return;
     }
 
-    // Check the payment intent status on load
+  
+
+
+
+
     const checkStatus = async () => {
       try {
         const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
@@ -56,8 +60,7 @@ const StripeCheckoutForm = ({ clientSecret, paymentIntentId, onSuccess, onError 
     e.preventDefault();
 
     if (!stripe || !elements) {
-      // Stripe.js hasn't yet loaded.
-      // Make sure to disable form submission until Stripe.js has loaded.
+     
       return;
     }
 
@@ -65,7 +68,7 @@ const StripeCheckoutForm = ({ clientSecret, paymentIntentId, onSuccess, onError 
     setMessage('');
 
     try {
-      // Confirm the payment with Stripe.js
+
       const { error: stripeError } = await stripe.confirmPayment({
         elements,
         confirmParams: {
@@ -78,7 +81,7 @@ const StripeCheckoutForm = ({ clientSecret, paymentIntentId, onSuccess, onError 
         setMessage(stripeError.message || "Une erreur s'est produite lors du paiement.");
         onError && onError(stripeError);
       } else {
-        // Payment succeeded, call our backend to update the invoice
+        
         try {
           const result = await confirmPayment(paymentIntentId);
           if (result.success) {

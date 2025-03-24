@@ -7,7 +7,7 @@ import { User } from '../users/schema/user.schema';
 import { factures } from '../factures/schema/facture.schema';
 import { Types } from 'mongoose';
 
-// Définir un type étendu pour inclure `createdAt` et `updatedAt`
+
 type MongooseFacture = Document<unknown, {}, factures> &
   factures &
   Required<{ _id: unknown }> & { __v: number } & {
@@ -38,7 +38,7 @@ type MongooseFacture = Document<unknown, {}, factures> &
         const factures = (await this.factureModel.find().exec()) as MongooseFacture[];
         console.log("Factures fetched:", factures);
   
-        // Calcul des statistiques
+   
         const totalRevenue = factures.reduce((sum, facture) => sum + facture.amount, 0);
   
         const paidFactures = factures.filter(facture => facture.isPaid);
@@ -66,7 +66,7 @@ type MongooseFacture = Document<unknown, {}, factures> &
           }
         });
   
-        // Renvoie des statistiques sans la recherche de catégorie "statistiques"
+       
         return {
           fournisseurs,
           users,

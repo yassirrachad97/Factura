@@ -11,7 +11,7 @@ describe('FacturesService', () => {
   let service: FacturesService;
   let factureModel: Model<factures>;
   let fournisseurModel: Model<fournisseur>;
-
+  
   const mockFacture = {
     _id: 'testId',
     userId: 'userId',
@@ -22,57 +22,68 @@ describe('FacturesService', () => {
     isPaid: false,
     createdBy: 'userId',
     save: jest.fn().mockResolvedValue(this),
+    toObject: jest.fn().mockReturnThis(),
   };
-
+  
   const mockFournisseur = {
     _id: 'fournisseurId',
     name: 'Test Fournisseur',
   };
 
-  const mockFactureModel = {
-    find: jest.fn().mockReturnValue({
+  // Create a mock class that can be instantiated with 'new'
+  class MockFactureModel {
+    constructor(dto) {
+      Object.assign(this, dto);
+    }
+    
+    save = jest.fn().mockImplementation(() => {
+      return Promise.resolve({
+        ...this,
+        _id: 'testId',
+        toObject: () => ({
+          ...this,
+          _id: 'testId'
+        })
+      });
+    });
+    
+    static find = jest.fn().mockReturnValue({
       populate: jest.fn().mockReturnValue({
         exec: jest.fn().mockResolvedValue([mockFacture]),
       }),
-    }),
-    findById: jest.fn().mockReturnValue({
+    });
+    
+    static findById = jest.fn().mockReturnValue({
       populate: jest.fn().mockReturnValue({
-        exec: jest.fn().mockResolvedValue(mockFacture),
+        populate: jest.fn().mockReturnValue({
+          exec: jest.fn().mockResolvedValue(mockFacture),
+        }),
       }),
-    }),
-    create: jest.fn().mockResolvedValue(mockFacture),
-    findByIdAndUpdate: jest.fn().mockReturnValue({
       exec: jest.fn().mockResolvedValue(mockFacture),
-    }),
-    findByIdAndDelete: jest.fn().mockReturnValue({
-      exec: jest.fn().mockResolvedValue(mockFacture),
-    }),
-    prototype: {
-      save: jest.fn().mockResolvedValue(mockFacture),
-    },
-  };
+    });
+  }
 
   const mockFournisseurModel = {
     findById: jest.fn().mockReturnValue({
       exec: jest.fn().mockResolvedValue(mockFournisseur),
     }),
   };
-
+  
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FacturesService,
-        { provide: getModelToken(factures.name), useValue: mockFactureModel },
-        { provide: getModelToken(User.name), useValue: {} }, // Mock vide pour userModel si non utilisé
+        { provide: getModelToken(factures.name), useValue: MockFactureModel },
+        { provide: getModelToken(User.name), useValue: {} }, // Empty mock for userModel
         { provide: getModelToken(fournisseur.name), useValue: mockFournisseurModel },
       ],
     }).compile();
-
+    
     service = module.get<FacturesService>(FacturesService);
     factureModel = module.get<Model<factures>>(getModelToken(factures.name));
     fournisseurModel = module.get<Model<fournisseur>>(getModelToken(fournisseur.name));
   });
-
+  
   describe('generateInvoice', () => {
     it('should generate an invoice preview', async () => {
       const dto = {
@@ -83,9 +94,9 @@ describe('FacturesService', () => {
         serviceType: 'Maintenance',
         serviceName: 'Annual Inspection',
       };
-
+      
       const result = await service.generateInvoice('userId', dto);
-
+      
       expect(result).toEqual(expect.objectContaining({
         userId: 'userId',
         fournisseurId: 'fournisseurId',
@@ -94,7 +105,7 @@ describe('FacturesService', () => {
         createdBy: 'userId',
       }));
     });
-
+    
     it('should throw NotFoundException if fournisseurId is missing', async () => {
       const dto = {
         fournisseurId: '',
@@ -104,17 +115,17 @@ describe('FacturesService', () => {
         serviceType: 'Maintenance',
         serviceName: 'Annual Inspection',
       };
-
+      
       await expect(service.generateInvoice('userId', dto)).rejects.toThrow(NotFoundException);
     });
   });
-
+  
   describe('getUserInvoices', () => {
     it('should return user invoices', async () => {
       const result = await service.getUserInvoices('userId');
-
+      
       expect(result).toEqual([mockFacture]);
-      expect(mockFactureModel.find).toHaveBeenCalledWith({ userId: 'userId' });
+      expect(MockFactureModel.find).toHaveBeenCalledWith({ userId: 'userId' });
     });
   });
 });

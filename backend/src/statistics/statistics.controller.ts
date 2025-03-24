@@ -8,7 +8,7 @@ export class StatisticsController {
   @Get()
   async getStatistics() {
     try {
-      // Calculer les statistiques
+     
       return await this.statisticsService.calculateStatistics();
     } catch (error) {
       console.error("Error while fetching statistics:", error);

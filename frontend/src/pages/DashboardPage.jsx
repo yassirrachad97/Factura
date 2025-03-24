@@ -115,7 +115,7 @@ export default function DashboardPage() {
           return <UserManagement/>;
         
           case "statistiques":
-            return <Statistique/>;  // Add this case
+            return <Statistique/>;  
           default:
             return null;
           

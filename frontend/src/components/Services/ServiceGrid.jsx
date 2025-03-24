@@ -5,7 +5,7 @@ import ServiceCard from './ServiceCard';
 import { useSelector } from 'react-redux';
 import PaymentModal from '../Payement/PaymentModal';
 
-// import PaymentModal from '../Payment/PaymentModal';
+
 
 const RECHARGE_AMOUNTS = [100, 200, 300, 500, 1000];
 
@@ -64,7 +64,7 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
   
       console.log('Réponse de l\'API (Facture générée):', newFacture);
       
-      // Make sure we have the ID
+    
       if (!newFacture._id && newFacture.id) {
         newFacture._id = newFacture.id;
       } else if (!newFacture.id && newFacture._id) {
@@ -87,7 +87,7 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
   };
 
   const handlePayment = () => {
-    // Instead of directly marking as paid, show Stripe payment modal
+  
     setShowPaymentModal(true);
     setShowFactureModal(false);
   };
@@ -102,11 +102,11 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
 
   const handleDownloadPDF = async () => {
     try {
-      // Create a fournisseur object from the selectedService
+    
       const fournisseurData = {
         name: selectedService.name || 'Fournisseur',
         email: selectedService.email || ''
-        // Add any other properties needed
+       
       };
       
       await downloadPDF(facture, fournisseurData, user);
@@ -315,7 +315,7 @@ export default function ServiceGrid({ services, isLoading, searchTerm }) {
         </div>
       )}
 
-      {/* Payment Modal */}
+    
       {showPaymentModal && facture && (
         <PaymentModal
           isOpen={showPaymentModal}

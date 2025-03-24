@@ -45,7 +45,7 @@ export default function LoginPage() {
         user: response.user,
         token: response.token
       }));
-      // localStorage handling is now done in the auth slice
+     
       navigate("/dashboard");
     } catch (err) {
       console.error("Échec de connexion:", err);

@@ -20,7 +20,7 @@ export default function VerifyOtpPage() {
     setError("");
     setSuccessMessage("");
 
-    // Try to get email from localStorage or location state
+ 
     const email = localStorage.getItem("user-email") || location.state?.email;
 
     if (!email) {
@@ -32,9 +32,9 @@ export default function VerifyOtpPage() {
       const response = await verifyOtp(email, otp);
       console.log("Verify OTP Response:", response);
 
-      // Add more flexible checking for successful verification
+  
       if (response && (response.message === "OTP validé avec succès" || response.status === 200)) {
-        // Ensure we have user and token before dispatching
+     
         if (response.user && response.token) {
           dispatch(setCredentials({
             user: response.user,
@@ -43,7 +43,7 @@ export default function VerifyOtpPage() {
           localStorage.setItem("token", response.token);
           localStorage.setItem("user-email", response.user.email);
         } else if (response.token) {
-          // Fallback if user object is not present
+        
           dispatch(setCredentials({
             user: { email },
             token: response.token
@@ -68,7 +68,7 @@ export default function VerifyOtpPage() {
     setError("");
     setSuccessMessage("");
 
-    // Try to get email from localStorage or location state
+  
     const email = localStorage.getItem("user-email") || location.state?.email;
 
     if (!email) {

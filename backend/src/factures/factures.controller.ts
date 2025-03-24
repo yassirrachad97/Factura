@@ -16,7 +16,7 @@ export class FacturesController {
     }
     const userId = req.user._id;
     const invoice = await this.FacturesService.generateInvoice(userId, createFactureDTO);
-    return { ...invoice, id: invoice._id.toString() }; // Retournez l'ID explicitement
+    return { ...invoice, id: invoice._id.toString() }; 
   }
   
 

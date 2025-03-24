@@ -1,4 +1,4 @@
-// serviceAPI.js (Version API)
+
 import { getCategory } from './categoryService';
 import { getFournisseursByCategory } from './fournisseurService';
 
