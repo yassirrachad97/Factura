@@ -19,7 +19,7 @@ services:
 
   mongo:
     image: mongo:latest
-    container_name: mongo_container
+    container_name: mongoContainer
     ports:
       - "27017:27017"
     environment:
