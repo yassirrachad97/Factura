@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { User, UserRole } from './schema/user.schema';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
-import { RegisterDto } from './dto/register.dto';
+import { RegisterDto } from './DTO/register.dto';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()

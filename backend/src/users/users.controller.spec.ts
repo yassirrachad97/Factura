@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
-import { RegisterDto } from './dto/register.dto';
-import { SendOtpDto } from './dto/send-otp.dto';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { RegisterDto } from './DTO/register.dto';
+import { SendOtpDto } from './DTO/send-otp.dto';
+import { VerifyOtpDto } from './DTO/verify-otp.dto';
 import { AuthGuard } from '@nestjs/passport';
 
 describe('UsersController', () => {

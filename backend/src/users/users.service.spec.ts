@@ -4,7 +4,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserRole } from './schema/user.schema';
 import { BadRequestException } from '@nestjs/common';
-import { RegisterDto } from './dto/register.dto';
+import { RegisterDto } from './DTO/register.dto';
 import * as bcrypt from 'bcryptjs';
 
 describe('UsersService', () => {
