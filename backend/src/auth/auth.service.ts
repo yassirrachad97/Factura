@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcryptjs';
-import { LoginDto } from './dto/login.dto';
+import { LoginDto } from './DTO/login.dto';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +20,7 @@ export class AuthService {
    
   
     const isNewDevice = !user.devices?.some((device) => 
+      
       device.deviceName === deviceId && device.iscourrant === true
     );
    

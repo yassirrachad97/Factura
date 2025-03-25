@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { FacturesController } from './factures.controller';
 import { FacturesService } from './factures.service';
-import { CreateFactureDTO } from './dto/create-facture.dto';
+import { CreateFactureDTO } from './DTO/create-facture.dto';
 import { UnauthorizedException } from '@nestjs/common';
 
 describe('FacturesController', () => {

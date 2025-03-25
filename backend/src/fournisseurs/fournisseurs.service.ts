@@ -2,8 +2,8 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { fournisseur } from './schema/fournisseur.schema';
-import { CreatefournisseurDTO } from './dto/create-fournisseur.dto';
-import { UpdatefournisseurDTO } from './dto/update-fournisseur.dto';
+import { CreatefournisseurDTO } from './DTO/create-fournisseur.dto';
+import { UpdatefournisseurDTO } from './DTO/update-fournisseur.dto';
 
 @Injectable()
 export class FournisseursService {

@@ -1,62 +1,50 @@
 version: '3.8'
 
 services:
-  # frontend:
-  #   build: 
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "5173:5173"
-  #   environment:
-  #     - VITE_API_URL=http://backend:3000
-  #     - REACT_APP_API_URL=http://backend:3000/api
-  #   volumes:
-  #     - ./frontend:/app
-  #     - /app/node_modules
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - factura-network
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://root:example@mongo:27017/factura?authSource=admin
+    volumes:
+      - ./backend:/app
+      - ./backend/uploads:/app/uploads
+    networks:
+      - app-network
 
-backend:
-  build: 
-    context: ./backend
-    dockerfile: Dockerfile
-  ports:
-    - "3000:3000"
-  env_file:
-    - ./backend/.env
-  environment:
-    - DATABASE_URL=mongodb://mongodb:27017/factura
-    - PORT=3000
-  depends_on:
-    - mongodb
-  networks:
-    - factura-network
-  mongodb:
+  mongo:
     image: mongo:latest
+    container_name: mongoContainer
     ports:
       - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
-    networks:
-      - factura-network
-
-  mongo-express:
-    image: mongo-express
-    ports:
-      - "8081:8081"
     environment:
-      - ME_CONFIG_MONGODB_SERVER=mongodb
-      - ME_CONFIG_MONGODB_PORT=27017
-    depends_on:
-      - mongodb
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=example
+    volumes:
+      - mongo_data:/data/db
     networks:
-      - factura-network
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    depends_on:
+      - app
+    networks:
+      - app-network
 
 volumes:
-  mongodb_data:
+  mongo_data:
+    driver: local
 
 networks:
-  factura-network:
+  app-network:
     driver: bridge

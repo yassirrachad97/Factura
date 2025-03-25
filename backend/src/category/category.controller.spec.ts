@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CategoryController } from './category.controller';
 import { CategoryService } from './category.service';
-import { CreateCategoryDto } from './dto/create-category.dto';
+import { CreateCategoryDto } from './DTO/create-category.dto';
 import { UserRole } from '../users/schema/user.schema';
 import { NotFoundException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';

@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards } from '@nestjs/common';
 import { CategoryService } from './category.service';
-import { CreateCategoryDto } from './dto/create-category.dto';
+import { CreateCategoryDto } from './DTO/create-category.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
