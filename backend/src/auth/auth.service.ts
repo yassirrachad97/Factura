@@ -20,6 +20,7 @@ export class AuthService {
    
   
     const isNewDevice = !user.devices?.some((device) => 
+      
       device.deviceName === deviceId && device.iscourrant === true
     );
    

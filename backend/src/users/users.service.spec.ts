@@ -26,7 +26,7 @@ describe('UsersService', () => {
     save: jest.fn().mockResolvedValue({}),
   };
 
-  // Mock de l'implémentation du constructeur du modèle
+
   const mockUserModelFactory = jest.fn().mockImplementation(dto => ({
     ...dto,
     save: jest.fn().mockImplementation(() => Promise.resolve(dto)),
@@ -58,7 +58,7 @@ describe('UsersService', () => {
           provide: getModelToken(User.name),
           useValue: {
             ...mockUserModel,
-            // Ajouter le constructeur mockée directement dans le fournisseur
+       
             new: mockUserModelFactory
           },
         },
@@ -68,13 +68,13 @@ describe('UsersService', () => {
     service = module.get<UsersService>(UsersService);
     userModel = module.get<Model<User>>(getModelToken(User.name));
 
-    // Mock bcrypt hash
+
     jest.spyOn(bcrypt, 'hash').mockImplementation(() => Promise.resolve('hashedPassword123'));
     jest.spyOn(bcrypt, 'compare').mockImplementation((plaintext, hash) => {
       return Promise.resolve(plaintext === 'oldPassword123');
     });
 
-    // Mock internal methods
+
     jest.spyOn(service, 'findByEmail').mockImplementation((email) => {
       if (email === 'test@example.com') {
         return Promise.resolve(mockUser as any);
@@ -107,7 +107,7 @@ describe('UsersService', () => {
 
       jest.spyOn(service, 'findByEmail').mockResolvedValueOnce(null);
       
-      // Nous utilisons le mock de constructeur déjà défini
+   
       const savedUser = {
         ...registerDto,
         isVerified: false,
